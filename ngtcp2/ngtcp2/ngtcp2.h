@@ -34,6 +34,11 @@
 #define NGTCP2_USE_GENERIC_SOCKADDR	1
 typedef uint32_t	socklen_t;
 
+#define PRId64	"lld"
+#define PRIi64	"lli"
+#define PRIu64	"llu"
+#define PRIx64	"llx"
+
 #ifdef AF_INET
 #  define NGTCP2_AF_INET AF_INET
 #else /* !AF_INET */

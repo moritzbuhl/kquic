@@ -25,7 +25,6 @@
 #include "ngtcp2_ksl.h"
 
 #include <linux/string.h>
-#include <stdio.h>
 
 #include "ngtcp2_macro.h"
 #include "ngtcp2_mem.h"
@@ -716,14 +715,13 @@ static void ksl_print(ngtcp2_ksl *ksl, ngtcp2_ksl_blk *blk, size_t level) {
   size_t i;
   ngtcp2_ksl_node *node;
 
-  fprintf(stderr, "LV=%zu n=%u\n", level, blk->n);
+  printk(KERN_INFO "LV=%zu n=%u\n", level, blk->n);
 
   if (blk->leaf) {
     for (i = 0; i < blk->n; ++i) {
       node = ngtcp2_ksl_nth_node(ksl, blk, i);
-      fprintf(stderr, " %" PRId64, *(int64_t *)(void *)node->key);
+      printk(KERN_INFO " %" PRId64 "\n", *(int64_t *)(void *)node->key);
     }
-    fprintf(stderr, "\n");
     return;
   }
 
