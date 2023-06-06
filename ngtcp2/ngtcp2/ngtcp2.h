@@ -31,6 +31,9 @@
 #define NGTCP2_EXTERN
 #define UINT64_MAX UINT_MAX
 
+#define NGTCP2_USE_GENERIC_SOCKADDR	1
+typedef uint32_t	socklen_t;
+
 #ifdef AF_INET
 #  define NGTCP2_AF_INET AF_INET
 #else /* !AF_INET */
