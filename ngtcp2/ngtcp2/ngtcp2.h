@@ -26,40 +26,10 @@
 #ifndef NGTCP2_H
 #define NGTCP2_H
 
-/* Define WIN32 when build target is Win32 API (borrowed from
-   libcurl) */
-#if (defined(_WIN32) || defined(__WIN32__)) && !defined(WIN32)
-#  define WIN32
-#endif
+#include <linux/kernel.h>
 
-#ifdef _MSC_VER
-#  pragma warning(push)
-#  pragma warning(disable : 4324)
-#endif
-
-#if defined(_MSC_VER) && (_MSC_VER < 1800)
-/* MSVC < 2013 does not have inttypes.h because it is not C99
-   compliant.  See compiler macros and version number in
-   https://sourceforge.net/p/predef/wiki/Compilers/ */
-#  include <stdint.h>
-#else /* !defined(_MSC_VER) || (_MSC_VER >= 1800) */
-#  include <inttypes.h>
-#endif /* !defined(_MSC_VER) || (_MSC_VER >= 1800) */
-#include <sys/types.h>
-#include <stdarg.h>
-#include <stddef.h>
-
-#ifndef NGTCP2_USE_GENERIC_SOCKADDR
-#  ifdef WIN32
-#    ifndef WIN32_LEAN_AND_MEAN
-#      define WIN32_LEAN_AND_MEAN
-#    endif /* WIN32_LEAN_AND_MEAN */
-#    include <ws2tcpip.h>
-#  else /* !WIN32 */
-#    include <sys/socket.h>
-#    include <netinet/in.h>
-#  endif /* !WIN32 */
-#endif   /* NGTCP2_USE_GENERIC_SOCKADDR */
+#define NGTCP2_EXTERN
+#define UINT64_MAX UINT_MAX
 
 #ifdef AF_INET
 #  define NGTCP2_AF_INET AF_INET
@@ -74,33 +44,9 @@
 #  define NGTCP2_USE_GENERIC_IPV6_SOCKADDR
 #endif /* !AF_INET6 */
 
-#include <ngtcp2/version.h>
+#include "version.h"
 
-#ifdef NGTCP2_STATICLIB
-#  define NGTCP2_EXTERN
-#elif defined(WIN32)
-#  ifdef BUILDING_NGTCP2
-#    define NGTCP2_EXTERN __declspec(dllexport)
-#  else /* !BUILDING_NGTCP2 */
-#    define NGTCP2_EXTERN __declspec(dllimport)
-#  endif /* !BUILDING_NGTCP2 */
-#else    /* !defined(WIN32) */
-#  ifdef BUILDING_NGTCP2
-#    define NGTCP2_EXTERN __attribute__((visibility("default")))
-#  else /* !BUILDING_NGTCP2 */
-#    define NGTCP2_EXTERN
-#  endif /* !BUILDING_NGTCP2 */
-#endif   /* !defined(WIN32) */
-
-#ifdef _MSC_VER
-#  define NGTCP2_ALIGN(N) __declspec(align(N))
-#else /* !_MSC_VER */
 #  define NGTCP2_ALIGN(N) __attribute__((aligned(N)))
-#endif /* !_MSC_VER */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /**
  * @typedef
