@@ -24,8 +24,8 @@
  */
 #include "ngtcp2_unreachable.h"
 
-#include <stdio.h>
-#include <errno.h>
+#include <linux/bug.h>
+
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>
 #endif /* HAVE_UNISTD_H */
@@ -33,38 +33,9 @@
 #  include <io.h>
 #endif /* WIN32 */
 
-void ngtcp2_unreachable_fail(const char *file, int line, const char *func) {
-  char *buf;
-  size_t buflen;
-  int rv;
-
 #define NGTCP2_UNREACHABLE_TEMPLATE "%s:%d %s: Unreachable.\n"
 
-  rv = snprintf(NULL, 0, NGTCP2_UNREACHABLE_TEMPLATE, file, line, func);
-  if (rv < 0) {
-    abort();
-  }
-
-  /* here we explicitly use system malloc */
-  buflen = (size_t)rv + 1;
-  buf = malloc(buflen);
-  if (buf == NULL) {
-    abort();
-  }
-
-  rv = snprintf(buf, buflen, NGTCP2_UNREACHABLE_TEMPLATE, file, line, func);
-  if (rv < 0) {
-    abort();
-  }
-
-#ifndef WIN32
-  while (write(STDERR_FILENO, buf, (size_t)rv) == -1 && errno == EINTR)
-    ;
-#else  /* WIN32 */
-  _write(_fileno(stderr), buf, (unsigned int)rv);
-#endif /* WIN32 */
-
-  free(buf);
-
-  abort();
+void ngtcp2_unreachable_fail(const char *file, int line, const char *func) {
+  printk(KERN_ERR NGTCP2_UNREACHABLE_TEMPLATE, file, line, func);
+  BUG();
 }
