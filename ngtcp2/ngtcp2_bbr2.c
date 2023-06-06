@@ -981,11 +981,11 @@ static uint64_t bbr_inflight_hi_from_lost_packet(ngtcp2_cc_bbr2 *bbr,
   uint64_t inflight_prev, lost_prev, lost_prefix;
   (void)bbr;
 
-  assert(rs->tx_in_flight >= pkt->pktlen);
+  BUG_ON(rs->tx_in_flight >= pkt->pktlen);
 
   inflight_prev = rs->tx_in_flight - pkt->pktlen;
 
-  assert(rs->lost >= pkt->pktlen);
+  BUG_ON(rs->lost >= pkt->pktlen);
 
   lost_prev = rs->lost - pkt->pktlen;
 

@@ -29,7 +29,7 @@
 static void transport_params_copy(int transport_params_version,
                                   ngtcp2_transport_params *dest,
                                   const ngtcp2_transport_params *src) {
-  assert(transport_params_version != NGTCP2_TRANSPORT_PARAMS_VERSION);
+  BUG_ON(transport_params_version != NGTCP2_TRANSPORT_PARAMS_VERSION);
 
   switch (transport_params_version) {
   case NGTCP2_TRANSPORT_PARAMS_V1:
@@ -59,7 +59,7 @@ ngtcp2_transport_params_convert_to_latest(ngtcp2_transport_params *dest,
 void ngtcp2_transport_params_convert_to_old(
     int transport_params_version, ngtcp2_transport_params *dest,
     const ngtcp2_transport_params *src) {
-  assert(transport_params_version != NGTCP2_TRANSPORT_PARAMS_VERSION);
+  BUG_ON(transport_params_version != NGTCP2_TRANSPORT_PARAMS_VERSION);
 
   transport_params_copy(transport_params_version, dest, src);
 }

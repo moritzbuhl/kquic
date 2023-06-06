@@ -74,7 +74,7 @@ void ngtcp2_pv_add_entry(ngtcp2_pv *pv, const uint8_t *data,
                          ngtcp2_tstamp ts) {
   ngtcp2_pv_entry *ent;
 
-  assert(pv->probe_pkt_left);
+  BUG_ON(pv->probe_pkt_left);
 
   if (ngtcp2_ringbuf_len(&pv->ents.rb) == 0) {
     pv->started_ts = ts;
@@ -137,7 +137,7 @@ int ngtcp2_pv_validation_timed_out(ngtcp2_pv *pv, ngtcp2_tstamp ts) {
     return 0;
   }
 
-  assert(ngtcp2_ringbuf_len(&pv->ents.rb));
+  BUG_ON(ngtcp2_ringbuf_len(&pv->ents.rb));
 
   ent = ngtcp2_ringbuf_get(&pv->ents.rb, ngtcp2_ringbuf_len(&pv->ents.rb) - 1);
 

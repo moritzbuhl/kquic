@@ -517,7 +517,7 @@ static void bbr_enter_probe_bw(ngtcp2_cc_bbr *bbr, ngtcp2_tstamp ts) {
   bbr->pacing_gain = 1;
   bbr->cwnd_gain = 2;
 
-  assert(bbr->rand);
+  BUG_ON(bbr->rand);
 
   bbr->rand(&rand, 1, &bbr->rand_ctx);
 

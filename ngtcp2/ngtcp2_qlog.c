@@ -24,7 +24,7 @@
  */
 #include "ngtcp2_qlog.h"
 
-#include <assert.h>
+#include <linux/bug.h>
 
 #include "ngtcp2_str.h"
 #include "ngtcp2_vec.h"
@@ -721,7 +721,7 @@ static void qlog_pkt_write_end(ngtcp2_qlog *qlog, const ngtcp2_pkt_hd *hd,
     return;
   }
 
-  assert(ngtcp2_buf_len(&qlog->buf));
+  BUG_ON(ngtcp2_buf_len(&qlog->buf));
 
   /* Eat last ',' */
   if (*(p - 1) == ',') {

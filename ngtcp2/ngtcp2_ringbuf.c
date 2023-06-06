@@ -24,7 +24,7 @@
  */
 #include "ngtcp2_ringbuf.h"
 
-#include <assert.h>
+#include <linux/bug.h>
 #ifdef WIN32
 #  include <intrin.h>
 #endif
@@ -57,9 +57,9 @@ int ngtcp2_ringbuf_init(ngtcp2_ringbuf *rb, size_t nmemb, size_t size,
 void ngtcp2_ringbuf_buf_init(ngtcp2_ringbuf *rb, size_t nmemb, size_t size,
                              uint8_t *buf, const ngtcp2_mem *mem) {
 #ifdef WIN32
-  assert(1 == __popcnt((unsigned int)nmemb));
+  BUG_ON(1 == __popcnt((unsigned int)nmemb));
 #else
-  assert(1 == __builtin_popcount((unsigned int)nmemb));
+  BUG_ON(1 == __builtin_popcount((unsigned int)nmemb));
 #endif
 
   rb->buf = buf;
@@ -103,17 +103,17 @@ void ngtcp2_ringbuf_pop_front(ngtcp2_ringbuf *rb) {
 }
 
 void ngtcp2_ringbuf_pop_back(ngtcp2_ringbuf *rb) {
-  assert(rb->len);
+  BUG_ON(rb->len);
   --rb->len;
 }
 
 void ngtcp2_ringbuf_resize(ngtcp2_ringbuf *rb, size_t len) {
-  assert(len <= rb->nmemb);
+  BUG_ON(len <= rb->nmemb);
   rb->len = len;
 }
 
 void *ngtcp2_ringbuf_get(ngtcp2_ringbuf *rb, size_t offset) {
-  assert(offset < rb->len);
+  BUG_ON(offset < rb->len);
   offset = (rb->first + offset) & (rb->nmemb - 1);
   return &rb->buf[offset * rb->size];
 }

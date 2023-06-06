@@ -24,7 +24,7 @@
  */
 #include "ngtcp2_pmtud.h"
 
-#include <assert.h>
+#include <linux/bug.h>
 
 #include "ngtcp2_mem.h"
 #include "ngtcp2_macro.h"
@@ -84,7 +84,7 @@ void ngtcp2_pmtud_del(ngtcp2_pmtud *pmtud) {
 }
 
 size_t ngtcp2_pmtud_probelen(ngtcp2_pmtud *pmtud) {
-  assert(pmtud->mtu_idx < NGTCP2_MTU_PROBESLEN);
+  BUG_ON(pmtud->mtu_idx < NGTCP2_MTU_PROBESLEN);
 
   return mtu_probes[pmtud->mtu_idx];
 }
@@ -107,7 +107,7 @@ int ngtcp2_pmtud_require_probe(ngtcp2_pmtud *pmtud) {
 }
 
 static void pmtud_next_probe(ngtcp2_pmtud *pmtud) {
-  assert(pmtud->mtu_idx < NGTCP2_MTU_PROBESLEN);
+  BUG_ON(pmtud->mtu_idx < NGTCP2_MTU_PROBESLEN);
 
   ++pmtud->mtu_idx;
   pmtud->num_pkts_sent = 0;
@@ -129,7 +129,7 @@ void ngtcp2_pmtud_probe_success(ngtcp2_pmtud *pmtud, size_t payloadlen) {
   pmtud->max_udp_payload_size =
       ngtcp2_max(pmtud->max_udp_payload_size, payloadlen);
 
-  assert(pmtud->mtu_idx < NGTCP2_MTU_PROBESLEN);
+  BUG_ON(pmtud->mtu_idx < NGTCP2_MTU_PROBESLEN);
 
   if (mtu_probes[pmtud->mtu_idx] > pmtud->max_udp_payload_size) {
     return;

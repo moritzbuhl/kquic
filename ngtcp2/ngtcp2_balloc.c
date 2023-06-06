@@ -24,13 +24,13 @@
  */
 #include "ngtcp2_balloc.h"
 
-#include <assert.h>
+#include <linux/bug.h>
 
 #include "ngtcp2_mem.h"
 
 void ngtcp2_balloc_init(ngtcp2_balloc *balloc, size_t blklen,
                         const ngtcp2_mem *mem) {
-  assert((blklen & 0xfu) == 0);
+  BUG_ON((blklen & 0xfu) == 0);
 
   balloc->mem = mem;
   balloc->blklen = blklen;
@@ -62,7 +62,7 @@ int ngtcp2_balloc_get(ngtcp2_balloc *balloc, void **pbuf, size_t n) {
   uint8_t *p;
   ngtcp2_memblock_hd *hd;
 
-  assert(n <= balloc->blklen);
+  BUG_ON(n <= balloc->blklen);
 
   if (ngtcp2_buf_left(&balloc->buf) < n) {
     p = ngtcp2_mem_malloc(balloc->mem,
@@ -81,7 +81,7 @@ int ngtcp2_balloc_get(ngtcp2_balloc *balloc, void **pbuf, size_t n) {
         balloc->blklen);
   }
 
-  assert(((uintptr_t)balloc->buf.last & 0xfu) == 0);
+  BUG_ON(((uintptr_t)balloc->buf.last & 0xfu) == 0);
 
   *pbuf = balloc->buf.last;
   balloc->buf.last += (n + 0xfu) & ~(uintptr_t)0xfu;

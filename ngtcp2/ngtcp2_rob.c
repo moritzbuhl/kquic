@@ -273,9 +273,9 @@ size_t ngtcp2_rob_data_at(ngtcp2_rob *rob, const uint8_t **pdest,
   it = ngtcp2_ksl_begin(&rob->dataksl);
   d = ngtcp2_ksl_it_get(&it);
 
-  assert(d);
-  assert(d->range.begin <= offset);
-  assert(offset < d->range.begin + rob->chunk);
+  BUG_ON(d);
+  BUG_ON(d->range.begin <= offset);
+  BUG_ON(offset < d->range.begin + rob->chunk);
 
   *pdest = d->begin + (offset - d->range.begin);
 
@@ -290,7 +290,7 @@ void ngtcp2_rob_pop(ngtcp2_rob *rob, uint64_t offset, size_t len) {
   it = ngtcp2_ksl_begin(&rob->dataksl);
   d = ngtcp2_ksl_it_get(&it);
 
-  assert(d);
+  BUG_ON(d);
 
   if (offset + len < d->range.begin + rob->chunk) {
     return;

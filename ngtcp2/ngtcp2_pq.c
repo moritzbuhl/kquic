@@ -25,7 +25,7 @@
  */
 #include "ngtcp2_pq.h"
 
-#include <assert.h>
+#include <linux/bug.h>
 
 #include "ngtcp2_macro.h"
 
@@ -87,7 +87,7 @@ int ngtcp2_pq_push(ngtcp2_pq *pq, ngtcp2_pq_entry *item) {
 }
 
 ngtcp2_pq_entry *ngtcp2_pq_top(ngtcp2_pq *pq) {
-  assert(pq->length);
+  BUG_ON(pq->length);
   return pq->q[0];
 }
 
@@ -122,7 +122,7 @@ void ngtcp2_pq_pop(ngtcp2_pq *pq) {
 }
 
 void ngtcp2_pq_remove(ngtcp2_pq *pq, ngtcp2_pq_entry *item) {
-  assert(pq->q[item->index] == item);
+  BUG_ON(pq->q[item->index] == item);
 
   if (item->index == 0) {
     ngtcp2_pq_pop(pq);

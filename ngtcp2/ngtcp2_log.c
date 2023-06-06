@@ -731,7 +731,7 @@ void ngtcp2_log_remote_tp(ngtcp2_log *log,
         (NGTCP2_LOG_TP " version_information.chosen_version=0x%08x"),
         NGTCP2_LOG_TP_HD_FIELDS, params->version_info.chosen_version);
 
-    assert(!(params->version_info.available_versionslen & 0x3));
+    BUG_ON(!(params->version_info.available_versionslen & 0x3));
 
     for (i = 0, p = params->version_info.available_versions;
          i < params->version_info.available_versionslen;

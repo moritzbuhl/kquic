@@ -24,7 +24,7 @@
  */
 #include "ngtcp2_idtr.h"
 
-#include <assert.h>
+#include <linux/bug.h>
 
 void ngtcp2_idtr_init(ngtcp2_idtr *idtr, int server, const ngtcp2_mem *mem) {
   ngtcp2_gaptr_init(&idtr->gap, mem);
@@ -51,7 +51,7 @@ static uint64_t id_from_stream_id(int64_t stream_id) {
 int ngtcp2_idtr_open(ngtcp2_idtr *idtr, int64_t stream_id) {
   uint64_t q;
 
-  assert((idtr->server && (stream_id % 2)) ||
+  BUG_ON((idtr->server && (stream_id % 2)) ||
          (!idtr->server && (stream_id % 2)) == 0);
 
   q = id_from_stream_id(stream_id);
@@ -66,7 +66,7 @@ int ngtcp2_idtr_open(ngtcp2_idtr *idtr, int64_t stream_id) {
 int ngtcp2_idtr_is_open(ngtcp2_idtr *idtr, int64_t stream_id) {
   uint64_t q;
 
-  assert((idtr->server && (stream_id % 2)) ||
+  BUG_ON((idtr->server && (stream_id % 2)) ||
          (!idtr->server && (stream_id % 2)) == 0);
 
   q = id_from_stream_id(stream_id);
