@@ -28,6 +28,7 @@
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>
 #endif
+#include <linux/bug.h>
 #include <linux/string.h>
 
 #include "ngtcp2_str.h"

@@ -24,6 +24,7 @@
  */
 #include "ngtcp2_gaptr.h"
 
+#include <linux/bug.h>
 #include <linux/string.h>
 
 void ngtcp2_gaptr_init(ngtcp2_gaptr *gaptr, const ngtcp2_mem *mem) {

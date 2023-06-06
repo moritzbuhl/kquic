@@ -25,6 +25,7 @@
  */
 #include "ngtcp2_map.h"
 
+#include <linux/bug.h>
 #include <linux/string.h>
 #include <stdio.h>
 

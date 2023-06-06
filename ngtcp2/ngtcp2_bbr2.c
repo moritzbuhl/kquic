@@ -24,6 +24,7 @@
  */
 #include "ngtcp2_bbr2.h"
 
+#include <linux/bug.h>
 #include <linux/string.h>
 
 #include "ngtcp2_log.h"
