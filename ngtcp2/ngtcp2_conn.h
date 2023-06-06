@@ -31,6 +31,8 @@
 
 #include "ngtcp2/ngtcp2.h"
 
+#undef current
+
 #include "ngtcp2_mem.h"
 #include "ngtcp2_crypto.h"
 #include "ngtcp2_acktr.h"
