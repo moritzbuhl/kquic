@@ -37,7 +37,6 @@
 #  pragma warning(disable : 4324)
 #endif
 
-#include <stdlib.h>
 #if defined(_MSC_VER) && (_MSC_VER < 1800)
 /* MSVC < 2013 does not have inttypes.h because it is not C99
    compliant.  See compiler macros and version number in

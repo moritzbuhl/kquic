@@ -29,8 +29,6 @@
 #  include <config.h>
 #endif /* HAVE_CONFIG_H */
 
-#include <stdlib.h>
-
 #include "ngtcp2/ngtcp2.h"
 
 #include "ngtcp2_objalloc.h"
