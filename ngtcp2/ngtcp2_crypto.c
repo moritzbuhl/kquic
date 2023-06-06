@@ -25,6 +25,7 @@
 #include "ngtcp2_crypto.h"
 
 #include <linux/string.h>
+#include <linux/socket.h>
 
 #include "ngtcp2_str.h"
 #include "ngtcp2_conv.h"
