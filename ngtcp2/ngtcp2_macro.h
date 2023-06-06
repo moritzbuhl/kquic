@@ -31,7 +31,7 @@
 
 #include <stddef.h>
 
-#include <ngtcp2/ngtcp2.h>
+#include "ngtcp2/ngtcp2.h"
 
 #define ngtcp2_min(A, B) ((A) < (B) ? (A) : (B))
 #define ngtcp2_max(A, B) ((A) > (B) ? (A) : (B))
