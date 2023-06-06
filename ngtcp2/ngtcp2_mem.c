@@ -23,30 +23,32 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+#include <linux/slab.h>
+
 #include "ngtcp2_mem.h"
 
 static void *default_malloc(size_t size, void *user_data) {
   (void)user_data;
 
-  return malloc(size);
+  return kmalloc(size, GFP_KERNEL);
 }
 
 static void default_free(void *ptr, void *user_data) {
   (void)user_data;
 
-  free(ptr);
+  kfree(ptr);
 }
 
 static void *default_calloc(size_t nmemb, size_t size, void *user_data) {
   (void)user_data;
 
-  return calloc(nmemb, size);
+  return kcalloc(nmemb, size, GFP_KERNEL);
 }
 
 static void *default_realloc(void *ptr, size_t size, void *user_data) {
   (void)user_data;
 
-  return realloc(ptr, size);
+  return krealloc(ptr, size, GFP_KERNEL);
 }
 
 static const ngtcp2_mem mem_default = {NULL, default_malloc, default_free,
