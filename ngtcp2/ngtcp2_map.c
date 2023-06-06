@@ -27,7 +27,6 @@
 
 #include <linux/bug.h>
 #include <linux/string.h>
-#include <stdio.h>
 
 #include "ngtcp2_conv.h"
 
@@ -135,12 +134,12 @@ void ngtcp2_map_print_distance(ngtcp2_map *map) {
     bkt = &map->table[i];
 
     if (bkt->data == NULL) {
-      fprintf(stderr, "@%u <EMPTY>\n", i);
+      printk(KERN_ERR "@%u <EMPTY>\n", i);
       continue;
     }
 
     idx = h2idx(bkt->hash, map->tablelenbits);
-    fprintf(stderr, "@%u hash=%08x key=%" PRIu64 " base=%zu distance=%zu\n", i,
+    printk(KERN_ERR "@%u hash=%08x key=%" PRIu64 " base=%zu distance=%zu\n", i,
             bkt->hash, bkt->key, idx,
             distance(map->tablelen, map->tablelenbits, bkt, idx));
   }
