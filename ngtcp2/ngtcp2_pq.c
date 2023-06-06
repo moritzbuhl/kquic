@@ -29,6 +29,8 @@
 
 #include "ngtcp2_macro.h"
 
+#undef	swap
+
 void ngtcp2_pq_init(ngtcp2_pq *pq, ngtcp2_less less, const ngtcp2_mem *mem) {
   pq->mem = mem;
   pq->capacity = 0;
