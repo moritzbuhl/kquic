@@ -299,6 +299,7 @@ static void bbr_update_rtprop(ngtcp2_cc_bbr *bbr, ngtcp2_conn_stat *cstat,
   }
 }
 
+__attribute__((target("sse2")))
 static void bbr_init_pacing_rate(ngtcp2_cc_bbr *bbr, ngtcp2_conn_stat *cstat) {
   double nominal_bandwidth =
       (double)bbr->initial_cwnd / (double)NGTCP2_MILLISECONDS;
@@ -306,6 +307,7 @@ static void bbr_init_pacing_rate(ngtcp2_cc_bbr *bbr, ngtcp2_conn_stat *cstat) {
   cstat->pacing_rate = bbr->pacing_gain * nominal_bandwidth;
 }
 
+__attribute__((target("sse2")))
 static void bbr_set_pacing_rate_with_gain(ngtcp2_cc_bbr *bbr,
                                           ngtcp2_conn_stat *cstat,
                                           double pacing_gain) {
@@ -320,6 +322,7 @@ static void bbr_set_pacing_rate(ngtcp2_cc_bbr *bbr, ngtcp2_conn_stat *cstat) {
   bbr_set_pacing_rate_with_gain(bbr, cstat, bbr->pacing_gain);
 }
 
+__attribute__((target("sse2")))
 static void bbr_set_send_quantum(ngtcp2_cc_bbr *bbr, ngtcp2_conn_stat *cstat) {
   size_t floor, send_quantum;
   (void)bbr;
@@ -336,6 +339,7 @@ static void bbr_set_send_quantum(ngtcp2_cc_bbr *bbr, ngtcp2_conn_stat *cstat) {
   cstat->send_quantum = ngtcp2_max(send_quantum, floor);
 }
 
+__attribute__((target("sse2")))
 static uint64_t bbr_inflight(ngtcp2_cc_bbr *bbr, ngtcp2_conn_stat *cstat,
                              double gain) {
   uint64_t quanta = 3 * cstat->send_quantum;

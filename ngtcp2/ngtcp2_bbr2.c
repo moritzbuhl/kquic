@@ -406,6 +406,7 @@ static void bbr_check_startup_high_loss(ngtcp2_cc_bbr2 *bbr,
   bbr->filled_pipe = 1;
 }
 
+__attribute__((target("sse2")))
 static void bbr_init_pacing_rate(ngtcp2_cc_bbr2 *bbr, ngtcp2_conn_stat *cstat) {
   double nominal_bandwidth = (double)bbr->initial_cwnd;
 
@@ -413,6 +414,7 @@ static void bbr_init_pacing_rate(ngtcp2_cc_bbr2 *bbr, ngtcp2_conn_stat *cstat) {
                        (double)NGTCP2_MILLISECONDS;
 }
 
+__attribute__((target("sse2")))
 static void bbr_set_pacing_rate_with_gain(ngtcp2_cc_bbr2 *bbr,
                                           ngtcp2_conn_stat *cstat,
                                           double pacing_gain) {
@@ -890,6 +892,7 @@ static int bbr_check_time_to_probe_bw(ngtcp2_cc_bbr2 *bbr,
   return 0;
 }
 
+__attribute__((target("sse2")))
 static void bbr_pick_probe_wait(ngtcp2_cc_bbr2 *bbr) {
   uint8_t rand;
 
@@ -1132,6 +1135,7 @@ static void bbr_handle_restart_from_idle(ngtcp2_cc_bbr2 *bbr,
   }
 }
 
+__attribute__((target("sse2")))
 static uint64_t bbr_bdp_multiple(ngtcp2_cc_bbr2 *bbr, uint64_t bw,
                                  double gain) {
   uint64_t bdp;
@@ -1286,6 +1290,7 @@ static void bbr_bound_cwnd_for_model(ngtcp2_cc_bbr2 *bbr,
   cstat->cwnd = ngtcp2_min(cstat->cwnd, cap);
 }
 
+__attribute__((target("sse2")))
 static void bbr_set_send_quantum(ngtcp2_cc_bbr2 *bbr, ngtcp2_conn_stat *cstat) {
   size_t floor, send_quantum;
   (void)bbr;

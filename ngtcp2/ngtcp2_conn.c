@@ -13599,6 +13599,7 @@ int ngtcp2_conn_set_stream_user_data(ngtcp2_conn *conn, int64_t stream_id,
   return 0;
 }
 
+__attribute__((target("sse2")))
 void ngtcp2_conn_update_pkt_tx_time(ngtcp2_conn *conn, ngtcp2_tstamp ts) {
   double pacing_rate;
   ngtcp2_duration interval;
