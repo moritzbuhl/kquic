@@ -25,8 +25,6 @@
  */
 #include "ngtcp2_mem.h"
 
-#include <stdio.h>
-
 static void *default_malloc(size_t size, void *user_data) {
   (void)user_data;
 
@@ -77,7 +75,7 @@ void *ngtcp2_mem_malloc_debug(const ngtcp2_mem *mem, size_t size,
                               const char *func, const char *file, size_t line) {
   void *nptr = mem->malloc(size, mem->user_data);
 
-  fprintf(stderr, "malloc %p size=%zu in %s at %s:%zu\n", nptr, size, func,
+  printk(KERN_ERR "malloc %p size=%zu in %s at %s:%zu\n", nptr, size, func,
           file, line);
 
   return nptr;
@@ -85,7 +83,7 @@ void *ngtcp2_mem_malloc_debug(const ngtcp2_mem *mem, size_t size,
 
 void ngtcp2_mem_free_debug(const ngtcp2_mem *mem, void *ptr, const char *func,
                            const char *file, size_t line) {
-  fprintf(stderr, "free ptr=%p in %s at %s:%zu\n", ptr, func, file, line);
+  printk(KERN_ERR "free ptr=%p in %s at %s:%zu\n", ptr, func, file, line);
 
   mem->free(ptr, mem->user_data);
 }
@@ -94,7 +92,7 @@ void *ngtcp2_mem_calloc_debug(const ngtcp2_mem *mem, size_t nmemb, size_t size,
                               const char *func, const char *file, size_t line) {
   void *nptr = mem->calloc(nmemb, size, mem->user_data);
 
-  fprintf(stderr, "calloc %p nmemb=%zu size=%zu in %s at %s:%zu\n", nptr, nmemb,
+  printk(KERN_ERR "calloc %p nmemb=%zu size=%zu in %s at %s:%zu\n", nptr, nmemb,
           size, func, file, line);
 
   return nptr;
@@ -105,7 +103,7 @@ void *ngtcp2_mem_realloc_debug(const ngtcp2_mem *mem, void *ptr, size_t size,
                                size_t line) {
   void *nptr = mem->realloc(ptr, size, mem->user_data);
 
-  fprintf(stderr, "realloc %p ptr=%p size=%zu in %s at %s:%zu\n", nptr, ptr,
+  printk(KERN_ERR "realloc %p ptr=%p size=%zu in %s at %s:%zu\n", nptr, ptr,
           size, func, file, line);
 
   return nptr;
