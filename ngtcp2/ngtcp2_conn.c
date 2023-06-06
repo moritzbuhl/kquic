@@ -40,6 +40,8 @@
 #include "ngtcp2_conversion.h"
 #include "ngtcp2_tstamp.h"
 
+#define INT64_MAX	S64_MAX
+
 /* NGTCP2_FLOW_WINDOW_RTT_FACTOR is the factor of RTT when flow
    control window auto-tuning is triggered. */
 #define NGTCP2_FLOW_WINDOW_RTT_FACTOR 2
