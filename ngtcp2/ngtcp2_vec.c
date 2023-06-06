@@ -24,8 +24,7 @@
  */
 #include "ngtcp2_vec.h"
 
-#include <string.h>
-#include <assert.h>
+#include <linux/string.h>
 
 #include "ngtcp2_str.h"
 

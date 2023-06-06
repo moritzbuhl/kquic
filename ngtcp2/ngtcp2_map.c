@@ -25,8 +25,7 @@
  */
 #include "ngtcp2_map.h"
 
-#include <string.h>
-#include <assert.h>
+#include <linux/string.h>
 #include <stdio.h>
 
 #include "ngtcp2_conv.h"

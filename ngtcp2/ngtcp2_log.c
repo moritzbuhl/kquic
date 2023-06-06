@@ -28,8 +28,7 @@
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>
 #endif
-#include <assert.h>
-#include <string.h>
+#include <linux/string.h>
 
 #include "ngtcp2_str.h"
 #include "ngtcp2_vec.h"

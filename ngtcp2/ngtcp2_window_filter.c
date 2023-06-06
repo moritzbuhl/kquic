@@ -34,7 +34,7 @@
  */
 #include "ngtcp2_window_filter.h"
 
-#include <string.h>
+#include <linux/string.h>
 
 void ngtcp2_window_filter_init(ngtcp2_window_filter *wf,
                                uint64_t window_length) {

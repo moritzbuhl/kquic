@@ -24,8 +24,7 @@
  */
 #include "ngtcp2_cid.h"
 
-#include <assert.h>
-#include <string.h>
+#include <linux/string.h>
 
 #include "ngtcp2_path.h"
 #include "ngtcp2_str.h"

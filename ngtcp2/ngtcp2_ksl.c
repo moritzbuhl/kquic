@@ -24,8 +24,7 @@
  */
 #include "ngtcp2_ksl.h"
 
-#include <string.h>
-#include <assert.h>
+#include <linux/string.h>
 #include <stdio.h>
 
 #include "ngtcp2_macro.h"

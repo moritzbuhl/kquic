@@ -24,8 +24,7 @@
  */
 #include "ngtcp2_gaptr.h"
 
-#include <string.h>
-#include <assert.h>
+#include <linux/string.h>
 
 void ngtcp2_gaptr_init(ngtcp2_gaptr *gaptr, const ngtcp2_mem *mem) {
   ngtcp2_ksl_init(&gaptr->gap, ngtcp2_ksl_range_compar, sizeof(ngtcp2_range),

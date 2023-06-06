@@ -24,7 +24,7 @@
  */
 #include "ngtcp2_str.h"
 
-#include <string.h>
+#include <linux/string.h>
 
 #include "ngtcp2_macro.h"
 
