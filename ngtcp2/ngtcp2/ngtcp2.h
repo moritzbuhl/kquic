@@ -29,7 +29,11 @@
 #include <linux/kernel.h>
 
 #define NGTCP2_EXTERN
-#define UINT64_MAX UINT_MAX
+
+#undef SIZE_MAX
+#define SIZE_MAX	18446744073709551615U
+#define UINT64_MAX	SIZE_MAX
+#define UINT32_MAX	UINT_MAX
 
 #define NGTCP2_USE_GENERIC_SOCKADDR	1
 typedef uint32_t	socklen_t;
