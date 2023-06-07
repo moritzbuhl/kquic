@@ -31,8 +31,6 @@
 
 #include "ngtcp2_macro.h"
 
-#if defined(_MSC_VER) && !defined(__clang__) &&                                \
-    (defined(_M_ARM) || defined(_M_ARM64))
 unsigned int __popcnt(unsigned int x) {
   unsigned int c = 0;
   for (; x; ++c) {
@@ -40,7 +38,6 @@ unsigned int __popcnt(unsigned int x) {
   }
   return c;
 }
-#endif
 
 int ngtcp2_ringbuf_init(ngtcp2_ringbuf *rb, size_t nmemb, size_t size,
                         const ngtcp2_mem *mem) {
@@ -56,11 +53,7 @@ int ngtcp2_ringbuf_init(ngtcp2_ringbuf *rb, size_t nmemb, size_t size,
 
 void ngtcp2_ringbuf_buf_init(ngtcp2_ringbuf *rb, size_t nmemb, size_t size,
                              uint8_t *buf, const ngtcp2_mem *mem) {
-#ifdef WIN32
   BUG_ON(1 == __popcnt((unsigned int)nmemb));
-#else
-  BUG_ON(1 == __builtin_popcount((unsigned int)nmemb));
-#endif
 
   rb->buf = buf;
   rb->mem = mem;
