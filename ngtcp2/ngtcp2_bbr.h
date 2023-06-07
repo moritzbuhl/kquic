@@ -44,6 +44,13 @@ typedef enum ngtcp2_bbr_state {
   NGTCP2_BBR_STATE_PROBE_RTT,
 } ngtcp2_bbr_state;
 
+typedef enum ngtcp2_bbr_pacing_state {
+  UNDER,
+  ONE,
+  OVER,
+} ngtcp2_bbr_pacing_state;
+
+
 /*
  * ngtcp2_cc_bbr is BBR congestion controller, described in
  * https://tools.ietf.org/html/draft-cardwell-iccrg-bbr-congestion-control-00
@@ -63,6 +70,7 @@ typedef struct ngtcp2_cc_bbr {
   /* The dynamic gain factor used to scale BBR.BtlBw to
          produce BBR.pacing_rate. */
   double pacing_gain;
+  ngtcp2_bbr_pacing_state pacing_state;
   /* The dynamic gain factor used to scale the estimated BDP to produce a
      congestion window (cwnd). */
   double cwnd_gain;

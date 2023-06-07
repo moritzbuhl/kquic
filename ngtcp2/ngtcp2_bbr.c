@@ -427,6 +427,7 @@ static void bbr_set_cwnd(ngtcp2_cc_bbr *bbr, ngtcp2_conn_stat *cstat,
 static void bbr_init(ngtcp2_cc_bbr *bbr, ngtcp2_conn_stat *cstat,
                      ngtcp2_tstamp initial_ts) {
   bbr->pacing_gain = NGTCP2_BBR_HIGH_GAIN;
+  bbr->pacing_state = OVER;
   bbr->prior_cwnd = 0;
   bbr->target_cwnd = 0;
   bbr->btl_bw = 0;
@@ -457,6 +458,7 @@ static void bbr_init(ngtcp2_cc_bbr *bbr, ngtcp2_conn_stat *cstat,
 static void bbr_enter_startup(ngtcp2_cc_bbr *bbr) {
   bbr->state = NGTCP2_BBR_STATE_STARTUP;
   bbr->pacing_gain = NGTCP2_BBR_HIGH_GAIN;
+  bbr->pacing_state = OVER;
   bbr->cwnd_gain = NGTCP2_BBR_HIGH_GAIN;
 }
 
@@ -492,6 +494,7 @@ static void bbr_enter_drain(ngtcp2_cc_bbr *bbr) {
   bbr->state = NGTCP2_BBR_STATE_DRAIN;
   /* pace slowly */
   bbr->pacing_gain = 1.0 / NGTCP2_BBR_HIGH_GAIN;
+  bbr->pacing_state = UNDER;
   /* maintain cwnd */
   bbr->cwnd_gain = NGTCP2_BBR_HIGH_GAIN;
 }
@@ -520,6 +523,7 @@ static void bbr_enter_probe_bw(ngtcp2_cc_bbr *bbr, ngtcp2_tstamp ts) {
 
   bbr->state = NGTCP2_BBR_STATE_PROBE_BW;
   bbr->pacing_gain = 1;
+  bbr->pacing_state = ONE;
   bbr->cwnd_gain = 2;
 
   BUG_ON(bbr->rand);
@@ -542,19 +546,25 @@ static void bbr_advance_cycle_phase(ngtcp2_cc_bbr *bbr, ngtcp2_tstamp ts) {
   bbr->cycle_stamp = ts;
   bbr->cycle_index = (bbr->cycle_index + 1) & (NGTCP2_BBR_GAIN_CYCLELEN - 1);
   bbr->pacing_gain = pacing_gain_cycle[bbr->cycle_index];
+  if (bbr->cycle_index == 0)
+      bbr->pacing_state = OVER;
+  else if (bbr->cycle_index == 1)
+      bbr->pacing_state = UNDER;
+  else
+      bbr->pacing_state = ONE;
 }
 
 static int bbr_is_next_cycle_phase(ngtcp2_cc_bbr *bbr, ngtcp2_conn_stat *cstat,
                                    const ngtcp2_cc_ack *ack, ngtcp2_tstamp ts) {
   int is_full_length = (ts - bbr->cycle_stamp) > bbr->rt_prop;
 
-  if (bbr->pacing_gain > 1) {
+  if (bbr->pacing_state == OVER) {
     return is_full_length && (ack->bytes_lost > 0 ||
                               ack->prior_bytes_in_flight >=
                                   bbr_inflight(bbr, cstat, bbr->pacing_gain));
   }
 
-  if (bbr->pacing_gain < 1) {
+  if (bbr->pacing_state == UNDER) {
     return is_full_length ||
            ack->prior_bytes_in_flight <= bbr_inflight(bbr, cstat, 1);
   }
@@ -596,6 +606,7 @@ static void bbr_check_probe_rtt(ngtcp2_cc_bbr *bbr, ngtcp2_conn_stat *cstat,
 static void bbr_enter_probe_rtt(ngtcp2_cc_bbr *bbr) {
   bbr->state = NGTCP2_BBR_STATE_PROBE_RTT;
   bbr->pacing_gain = 1;
+  bbr->pacing_state = ONE;
   bbr->cwnd_gain = 1;
 }
 
