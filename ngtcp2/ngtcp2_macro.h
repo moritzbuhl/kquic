@@ -29,8 +29,6 @@
 #  include <config.h>
 #endif /* HAVE_CONFIG_H */
 
-#include <stddef.h>
-
 #include "ngtcp2/ngtcp2.h"
 
 #define ngtcp2_min(A, B) ((A) < (B) ? (A) : (B))
