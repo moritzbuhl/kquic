@@ -5,5 +5,5 @@
 ccflags-y := -O3 -Wall
 ccflags-$(CONFIG_INET_QUIC_DEBUG) += -DDEBUG -g
 
-obj-m +=
-obj-m +=	ngtcp2/
+obj-m +=	quic.o
+#obj-m +=	ngtcp2/
