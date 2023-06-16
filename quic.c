@@ -21,8 +21,6 @@ static const struct net_protocol quic_protocol = {
 };
 
 const struct net_protocol *udp_protocol;
-int	(*udp_rcv_p)(struct sk_buff *skb);
-int	(*udp_err_p)(struct sk_buff *skb, u32 info);
 
 static int quic_rcv_skb(struct sock *sk, struct sk_buff *skb)
 {
@@ -56,7 +54,7 @@ int quic_rcv(struct sk_buff *skb)
 	return quic_rcv_skb(sk, skb);
 
 notquic:
-	return udp_rcv_p(skb);
+	return udp_protocol->handler(skb);
 drop:
 	kfree_skb(skb);
 	return 0;
@@ -64,7 +62,7 @@ drop:
 
 int quic_err(struct sk_buff *skb, u32 info)
 {
-	return udp_err_p(skb, info);
+	return udp_protocol->err_handler(skb, info);
 }
 
 int quic_init_sock(struct sock *sk)
@@ -192,9 +190,6 @@ static int __init quic_init(void)
 		pr_crit("%s: Cannot find UDP protocol\n", __func__);
 		return -1;
 	}
-
-	udp_rcv_p = udp_protocol->handler;
-	udp_err_p = udp_protocol->err_handler;
 
 	if ((rc = quic_table_init(&quic_table)) < 0)
 		return rc;
