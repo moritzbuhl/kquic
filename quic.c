@@ -155,4 +155,4 @@ static void __exit quic_exit(void)
 module_init(quic_init);
 module_exit(quic_exit);
 
-MODULE_LICENSE("MIT");
+MODULE_LICENSE("Dual MIT/GPL");
