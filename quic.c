@@ -154,6 +154,11 @@ static int __init quic_init(void)
 	int rc;
 
  	udp_protocol = inet_protos[IPPROTO_UDP];
+	if (!udp_protocol) {
+		pr_crit("%s: Cannot find UDP protocol\n", __func__);
+		return -1;
+	}
+
 	udp_rcv_p = udp_protocol->handler;
 	udp_err_p = udp_protocol->err_handler;
 
@@ -182,7 +187,7 @@ static void __exit quic_exit(void)
 {
 	/* proto_unregister(); */
 
-	if (inet_del_protocol(&quic_protocol, IPPROTO_UDP) < 0)
+	if (inet_del_protocol(inet_protos[IPPROTO_UDP], IPPROTO_UDP) < 0)
 		pr_crit("%s: Cannot remove QUIC protocol\n", __func__);
 	if (inet_add_protocol(udp_protocol, IPPROTO_UDP) < 0)
 		pr_crit("%s: Cannot add UDP protocol\n", __func__);
