@@ -205,7 +205,10 @@ static int __init quic_init(void)
 		return rc;
 	}
 
-	/* proto_register(); */
+	if ((rc = proto_register(&quic_prot, 1)) < 0) {
+		pr_crit("%s: Cannot register QUIC prot\n", __func__);
+		return rc;
+	}
 
 	if ((rc = inet_del_protocol(inet_protos[IPPROTO_UDP],
 			IPPROTO_UDP)) < 0) {
@@ -225,7 +228,7 @@ static int __init quic_init(void)
 
 static void __exit quic_exit(void)
 {
-	/* proto_unregister(); */
+	proto_unregister(&quic_prot);
 
 	if (inet_del_protocol(inet_protos[IPPROTO_UDP], IPPROTO_UDP) < 0)
 		pr_crit("%s: Cannot remove QUIC protocol\n", __func__);
