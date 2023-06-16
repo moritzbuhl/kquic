@@ -200,8 +200,10 @@ static int __init quic_init(void)
 		return -1;
 	}
 
-	if ((rc = quic_table_init(&quic_table)) < 0)
+	if ((rc = quic_table_init(&quic_table)) < 0) {
+		pr_crit("%s: quic_table_init failed\n", __func__);
 		return rc;
+	}
 
 	/* proto_register(); */
 
