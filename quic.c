@@ -1,5 +1,6 @@
-#include <linux/printk.h>
 #include <linux/module.h>
+#include <linux/printk.h>
+#include <linux/skbuff.h>
 #include <linux/version.h>
 
 #include <net/protocol.h>
@@ -25,7 +26,34 @@ int	(*udp_err_p)(struct sk_buff *skb, u32 info);
 
 int quic_rcv(struct sk_buff *skb)
 {
+	struct sock *sk;
+	const struct iphdr *iph;
+	const struct udphdr *uh;
+
+	if (!pskb_may_pull(skb, sizeof(struct udphdr)))
+		goto drop;
+
+	/* XXX: ignoring checksum validation */
+
+	iph = ip_hdr(skb);
+	uh = udp_hdr(skb);
+	rcu_read_lock();
+	sk = __udp4_lib_lookup(dev_net(skb->dev), iph->saddr, uh->source,
+			iph->daddr, uh->dest, inet_iif(skb),
+			inet_sdif(skb), &quic_table, NULL);
+	if (!sk || !refcount_inc_not_zero(&sk->sk_refcnt)) {
+		rcu_read_unlock();
+		goto notquic;
+	}
+	rcu_read_unlock();
+
+	return __udp_enqueue_schedule_skb(sk, skb);
+
+notquic:
 	return udp_rcv_p(skb);
+drop:
+	kfree_skb(skb);
+	return 0;
 }
 
 int quic_err(struct sk_buff *skb, u32 info)
