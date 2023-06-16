@@ -3,6 +3,8 @@
 #include <linux/skbuff.h>
 #include <linux/version.h>
 
+#include <net/sock.h>
+#include <net/inet_common.h>
 #include <net/protocol.h>
 #include <net/udp.h>
 
@@ -151,6 +153,13 @@ struct proto quic_prot = {
 	.diag_destroy		= quic_abort,
 };
 
+static struct inet_protosw quic4_protosw = {
+	.type		= SOCK_STREAM,
+	.protocol	= IPPROTO_UDP,
+	.prot		= &quic_prot,
+	.ops		= &inet_dgram_ops,
+};
+
 static int __init quic_table_init(struct udp_table *table)
 {
 	unsigned long size;
@@ -207,7 +216,7 @@ static int __init quic_init(void)
 		return rc;
 	}
 
-	/* inet_register_protosw(); */
+	inet_register_protosw(&quic4_protosw);
 
 	return 0;
 }
@@ -221,7 +230,7 @@ static void __exit quic_exit(void)
 	if (inet_add_protocol(udp_protocol, IPPROTO_UDP) < 0)
 		pr_crit("%s: Cannot add UDP protocol\n", __func__);
 
-	/* inet_unregister_protosw(); */
+	inet_unregister_protosw(&quic4_protosw);
 }
 
 module_init(quic_init);
