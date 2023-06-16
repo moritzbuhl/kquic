@@ -24,6 +24,12 @@ const struct net_protocol *udp_protocol;
 int	(*udp_rcv_p)(struct sk_buff *skb);
 int	(*udp_err_p)(struct sk_buff *skb, u32 info);
 
+static int quic_rcv_skb(struct sock *sk, struct sk_buff *skb)
+{
+	/* XXX: process QUIC protocol */
+	return __udp_enqueue_schedule_skb(sk, skb);
+}
+
 int quic_rcv(struct sk_buff *skb)
 {
 	struct sock *sk;
@@ -47,7 +53,7 @@ int quic_rcv(struct sk_buff *skb)
 	}
 	rcu_read_unlock();
 
-	return __udp_enqueue_schedule_skb(sk, skb);
+	return quic_rcv_skb(sk, skb);
 
 notquic:
 	return udp_rcv_p(skb);
