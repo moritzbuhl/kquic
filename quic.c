@@ -56,6 +56,9 @@ int quic_getsockopt(struct sock *sk, int level, int optname,
 }
 
 int quic_recvmsg(struct sock *sk, struct msghdr *msg, size_t len,
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5,13,0)
+		int nonblock,
+#endif
 		int flags, int *addr_len)
 {
 	return -1;
