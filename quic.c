@@ -5,6 +5,8 @@
 #include <net/protocol.h>
 #include <net/udp.h>
 
+struct udp_table quic_table __read_mostly;
+
 int	quic_rcv(struct sk_buff *);
 int	quic_err(struct sk_buff *, u32);
 
@@ -110,17 +112,50 @@ struct proto quic_prot = {
 	.sysctl_wmem_offset	= offsetof(struct net, ipv4.sysctl_udp_wmem_min),
 	.sysctl_rmem_offset	= offsetof(struct net, ipv4.sysctl_udp_rmem_min),
 	.obj_size		= sizeof(struct udp_sock),
-	.h.udp_table		= &udp_table,
+	.h.udp_table		= &quic_table,
 	.diag_destroy		= quic_abort,
 };
 
-static int __init quic_init(void) 
+static int __init quic_table_init(struct udp_table *table)
+{
+	unsigned long size;
+	unsigned int i;
+	table->log = 8;
+
+	do {
+		size = (2 * sizeof(struct udp_hslot)) << table->log;
+		table->hash = alloc_pages_exact(size,
+				GFP_ATOMIC | __GFP_ZERO);
+	} while (!table->hash && size > PAGE_SIZE && --table->log);
+
+	if (!table->hash)
+		return -ENOMEM;
+
+	table->mask = (1 << table->log) - 1;
+	table->hash2 = table->hash + (table->mask + 1);
+
+	for (i = 0; i <= table->mask; i++) {
+		INIT_HLIST_HEAD(&(table->hash[i].head));
+		INIT_HLIST_HEAD(&(table->hash2[i].head));
+		table->hash[i].count = 0;
+		table->hash2[i].count = 0;
+		spin_lock_init(&(table->hash[i].lock));
+		spin_lock_init(&(table->hash2[i].lock));
+	}
+
+	return 0;
+}
+
+static int __init quic_init(void)
 {
 	int rc;
 
  	udp_protocol = inet_protos[IPPROTO_UDP];
 	udp_rcv_p = udp_protocol->handler;
 	udp_err_p = udp_protocol->err_handler;
+
+	if ((rc = quic_table_init(&quic_table)) < 0)
+		return rc;
 
 	/* proto_register(); */
 
