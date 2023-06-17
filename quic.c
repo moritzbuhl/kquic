@@ -131,6 +131,7 @@ struct proto quic_prot = {
 	.pre_connect		= udp_pre_connect,
 	.connect		= ip4_datagram_connect,
 	.disconnect		= udp_disconnect,
+	.accept			= inet_csk_accept,
 	.ioctl			= udp_ioctl,
 	.init			= quic_init_sock,
 	.destroy		= quic_destroy_sock,
