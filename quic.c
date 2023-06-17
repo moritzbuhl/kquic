@@ -104,7 +104,7 @@ int quic_sendpage(struct sock *sk, struct page *page, int offset, size_t size,
 	return -1;
 }
 
-void quic_datagram_release_cb(struct sock *sk)
+void quic_release_cb(struct sock *sk)
 {
 	return;
 }
@@ -139,7 +139,7 @@ struct proto quic_prot = {
 	.sendmsg		= udp_sendmsg,
 	.recvmsg		= quic_recvmsg,
 	.sendpage		= quic_sendpage,
-	.release_cb		= quic_datagram_release_cb,
+	.release_cb		= quic_release_cb,
 	.hash			= udp_lib_hash,
 	.unhash			= udp_lib_unhash,
 	.rehash			= quic_v4_rehash,
