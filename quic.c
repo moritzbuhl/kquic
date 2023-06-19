@@ -67,6 +67,11 @@ int quic_err(struct sk_buff *skb, u32 info)
 	return udp_protocol->err_handler(skb, info);
 }
 
+int quic_v4_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
+{
+	return -1;
+}
+
 int quic_init_sock(struct sock *sk)
 {
 	return -1;
@@ -129,7 +134,7 @@ struct proto quic_prot = {
 	.owner			= THIS_MODULE,
 	.close			= udp_lib_close,
 	.pre_connect		= udp_pre_connect,
-	.connect		= ip4_datagram_connect,
+	.connect		= quic_v4_connect,
 	.disconnect		= udp_disconnect,
 	.accept			= inet_csk_accept,
 	.ioctl			= udp_ioctl,
