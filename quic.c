@@ -69,28 +69,33 @@ int quic_err(struct sk_buff *skb, u32 info)
 
 int quic_v4_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 {
+	pr_info("%s\n", __func__);
 	return -1;
 }
 
 int quic_init_sock(struct sock *sk)
 {
+	pr_info("%s\n", __func__);
 	return -1;
 }
 
 void quic_destroy_sock(struct sock *sk)
 {
+	pr_info("%s\n", __func__);
 	return;
 }
 
 int quic_setsockopt(struct sock *sk, int level, int optname, sockptr_t optval,
 		unsigned int optlen)
 {
+	pr_info("%s\n", __func__);
 	return -1;
 }
 
 int quic_getsockopt(struct sock *sk, int level, int optname,
 		char __user *optval, int __user *optlen)
 {
+	pr_info("%s\n", __func__);
 	return -1;
 }
 
@@ -100,32 +105,38 @@ int quic_recvmsg(struct sock *sk, struct msghdr *msg, size_t len,
 #endif
 		int flags, int *addr_len)
 {
+	pr_info("%s\n", __func__);
 	return -1;
 }
 
 int quic_sendpage(struct sock *sk, struct page *page, int offset, size_t size,
 		int flags)
 {
+	pr_info("%s\n", __func__);
 	return -1;
 }
 
 void quic_release_cb(struct sock *sk)
 {
+	pr_info("%s\n", __func__);
 	return;
 }
 
 void quic_v4_rehash(struct sock *sk)
 {
+	pr_info("%s\n", __func__);
 	return;
 }
 
 int quic_v4_get_port(struct sock *sk, unsigned short snum)
 {
+	pr_info("%s\n", __func__);
 	return -1;
 }
 
 int quic_abort(struct sock *sk, int err)
 {
+	pr_info("%s\n", __func__);
 	return -1;
 }
 
