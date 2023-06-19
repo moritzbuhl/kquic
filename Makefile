@@ -6,11 +6,18 @@ KERNELRELEASE ?= $(shell uname -r)
 KERNELDIR ?= /lib/modules/$(KERNELRELEASE)/build
 DEPMOD ?= depmod
 PWD := $(shell pwd)
+NGTCP2_FILES = quic.c ngtcp2/
 
 all: module
 debug: module-debug
 
-module:
+authors.h:
+	> $@
+	git shortlog -sne $(NGTCP2_FILES) |  cut -f 2- | while read a; do \
+		echo "MODULE_AUTHOR(\"$$a\");" >> $@; \
+	done
+
+module: authors.h
 	@$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
 
 module-debug:
@@ -18,6 +25,7 @@ module-debug:
 
 clean:
 	@$(MAKE) -C $(KERNELDIR) M=$(PWD) clean
+	rm -f authors.h
 
 install:
 	@$(MAKE) -C $(KERNELDIR) M=$(PWD) modules_install

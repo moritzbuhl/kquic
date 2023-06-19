@@ -33,6 +33,10 @@
 #include <net/protocol.h>
 #include <net/udp.h>
 
+#include "ngtcp2/ngtcp2/ngtcp2.h"
+#include "ngtcp2/ngtcp2/version.h"
+#include "authors.h"
+
 struct udp_table quic_table __read_mostly;
 
 int	quic_rcv(struct sk_buff *);
@@ -284,3 +288,5 @@ module_init(quic_init);
 module_exit(quic_exit);
 
 MODULE_LICENSE("Dual MIT/GPL");
+MODULE_DESCRIPTION("QUIC - RFC9000");
+MODULE_VERSION(NGTCP2_VERSION);
