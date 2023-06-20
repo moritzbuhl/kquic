@@ -36,6 +36,7 @@
 #include "ngtcp2/ngtcp2/ngtcp2.h"
 #include "ngtcp2/ngtcp2/version.h"
 #include "authors.h"
+#include "quic.h"
 
 struct udp_table quic_table __read_mostly;
 
