@@ -24,6 +24,7 @@
  */
 #include "ngtcp2_conversion.h"
 
+#include <linux/bug.h>
 #include <linux/string.h>
 
 static void transport_params_copy(int transport_params_version,
