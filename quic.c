@@ -117,8 +117,27 @@ static void quic_destruct_sock(struct sock *sk)
 
 int quic_init_sock(struct sock *sk)
 {
+	struct socket so;
+	sockptr_t sptr;
+	int ret;
+	so.sk = sk;
+	sptr.is_kernel = 1;
+
 	skb_queue_head_init(&quic_sk(sk)->reader_queue);
 	sk->sk_destruct = quic_destruct_sock;
+	sptr.kernel = &sysctl_rmem_max;
+	if ((ret = sock_setsockopt(&so, SOL_SOCKET, SO_RCVBUF,
+			sptr, sizeof(sysctl_rmem_max))) < 0) {
+		pr_crit("%s: setting RCVBUF failed\n", __func__);
+		return ret;
+	}
+	sptr.kernel = &sysctl_wmem_max;
+	if ((ret = sock_setsockopt(&so, SOL_SOCKET, SO_SNDBUF,
+			sptr, sizeof(sysctl_wmem_max))) < 0) {
+		pr_crit("%s: setting SNDBUF failed\n", __func__);
+		return ret;
+	}
+
 	return 0;
 }
 
