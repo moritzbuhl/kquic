@@ -25,10 +25,14 @@ module-debug:
 
 clean:
 	@$(MAKE) -C $(KERNELDIR) M=$(PWD) clean
+	@$(MAKE) -C tests clean
 	rm -f authors.h
 
 install:
 	@$(MAKE) -C $(KERNELDIR) M=$(PWD) modules_install
 	@$(DEPMOD) -A $(KERNELRELEASE)
 
-.PHONY: all module-debug module-install install clean
+test:
+	@$(MAKE) -C tests
+
+.PHONY: all debug module module-debug clean install test

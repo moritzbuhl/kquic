@@ -1,6 +1,9 @@
 # Build products
 authors.h
 
+tests/test-tcp
+tests/test-quic
+
 # Prerequisites
 *.d
 
