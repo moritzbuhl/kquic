@@ -103,10 +103,23 @@ int quic_v4_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 	return -1;
 }
 
+static void quic_destruct_sock(struct sock *sk)
+{
+	struct quic_sock *qp = quic_sk(sk);
+	struct sk_buff *skb;
+
+	skb_queue_splice_tail_init(&sk->sk_receive_queue, &qp->reader_queue);
+	while ((skb = __skb_dequeue(&qp->reader_queue)) != NULL) {
+		kfree_skb(skb);
+	}
+	inet_sock_destruct(sk);
+}
+
 int quic_init_sock(struct sock *sk)
 {
-	pr_info("%s\n", __func__);
-	return -1;
+	skb_queue_head_init(&quic_sk(sk)->reader_queue);
+	sk->sk_destruct = quic_destruct_sock;
+	return 0;
 }
 
 void quic_destroy_sock(struct sock *sk)

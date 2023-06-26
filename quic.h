@@ -39,4 +39,9 @@ struct quic_sock {
 	struct ngtcp2_path	path;
 	__u32			version;
 };
+
+static inline struct quic_sock *quic_sk(const struct sock *sk)
+{
+	return (struct quic_sock *)sk;
+}
 #endif /* _QUIC_H */
