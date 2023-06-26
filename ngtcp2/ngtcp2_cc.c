@@ -24,8 +24,8 @@
  */
 #include "ngtcp2_cc.h"
 
-#include <linux/bug.h>
-#include <linux/string.h>
+
+
 
 #if defined(_MSC_VER)
 #  include <intrin.h>

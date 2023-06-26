@@ -24,7 +24,7 @@
  */
 #include "ngtcp2_rst.h"
 
-#include <linux/bug.h>
+
 
 #include "ngtcp2_rtb.h"
 #include "ngtcp2_cc.h"

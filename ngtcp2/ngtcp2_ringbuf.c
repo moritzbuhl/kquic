@@ -24,7 +24,7 @@
  */
 #include "ngtcp2_ringbuf.h"
 
-#include <linux/bug.h>
+
 #ifdef WIN32
 #  include <intrin.h>
 #endif

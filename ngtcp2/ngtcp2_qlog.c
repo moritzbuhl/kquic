@@ -24,7 +24,7 @@
  */
 #include "ngtcp2_qlog.h"
 
-#include <linux/bug.h>
+
 
 #include "ngtcp2_str.h"
 #include "ngtcp2_vec.h"

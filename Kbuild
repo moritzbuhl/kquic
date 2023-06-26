@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2020 Dave Voutila <dave@sisu.io>. All rights reserved.
 
-ccflags-y := -O3 -Wall -I$(PWD)
+ccflags-y := -O3 -Wall -I$(PWD) -DHAVE_CONFIG_H -DNGTCP2_USE_GENERIC_SOCKADDR
 ccflags-$(CONFIG_INET_QUIC_DEBUG) += -DDEBUG -g
 
 obj-m :=	kquic.o

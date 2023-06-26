@@ -29,7 +29,7 @@
 #  include <config.h>
 #endif /* HAVE_CONFIG_H */
 
-#include "ngtcp2/ngtcp2.h"
+
 
 /*
  * ngtcp2_tstamp_elapsed returns nonzero if at least |d| has passed

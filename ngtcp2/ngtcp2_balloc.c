@@ -24,7 +24,7 @@
  */
 #include "ngtcp2_balloc.h"
 
-#include <linux/bug.h>
+
 
 #include "ngtcp2_mem.h"
 

@@ -24,7 +24,7 @@
  */
 #include "ngtcp2_unreachable.h"
 
-#include <linux/bug.h>
+
 
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>

@@ -24,7 +24,7 @@
  */
 #include "ngtcp2_idtr.h"
 
-#include <linux/bug.h>
+
 
 void ngtcp2_idtr_init(ngtcp2_idtr *idtr, int server, const ngtcp2_mem *mem) {
   ngtcp2_gaptr_init(&idtr->gap, mem);

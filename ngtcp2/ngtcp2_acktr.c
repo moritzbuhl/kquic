@@ -24,7 +24,7 @@
  */
 #include "ngtcp2_acktr.h"
 
-#include <linux/bug.h>
+
 
 #include "ngtcp2_macro.h"
 #include "ngtcp2_tstamp.h"

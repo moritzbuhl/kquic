@@ -29,7 +29,7 @@
 #  include <config.h>
 #endif /* HAVE_CONFIG_H */
 
-#include "ngtcp2/ngtcp2.h"
+
 
 void *ngtcp2_cpymem(void *dest, const void *src, size_t n);
 

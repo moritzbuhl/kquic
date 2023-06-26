@@ -24,8 +24,8 @@
  */
 #include "ngtcp2_strm.h"
 
-#include <linux/bug.h>
-#include <linux/string.h>
+
+
 
 #include "ngtcp2_rtb.h"
 #include "ngtcp2_pkt.h"

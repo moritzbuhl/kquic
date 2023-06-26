@@ -24,8 +24,8 @@
  */
 #include "ngtcp2_conn.h"
 
-#include <linux/bug.h>
-#include <linux/string.h>
+
+
 
 #include "ngtcp2_macro.h"
 #include "ngtcp2_log.h"

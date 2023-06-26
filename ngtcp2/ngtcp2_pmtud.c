@@ -24,7 +24,7 @@
  */
 #include "ngtcp2_pmtud.h"
 
-#include <linux/bug.h>
+
 
 #include "ngtcp2_mem.h"
 #include "ngtcp2_macro.h"

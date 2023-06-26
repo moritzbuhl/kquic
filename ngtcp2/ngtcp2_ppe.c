@@ -24,8 +24,8 @@
  */
 #include "ngtcp2_ppe.h"
 
-#include <linux/bug.h>
-#include <linux/string.h>
+
+
 
 #include "ngtcp2_str.h"
 #include "ngtcp2_conv.h"

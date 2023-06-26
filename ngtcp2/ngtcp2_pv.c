@@ -24,8 +24,8 @@
  */
 #include "ngtcp2_pv.h"
 
-#include <linux/bug.h>
-#include <linux/string.h>
+
+
 
 #include "ngtcp2_mem.h"
 #include "ngtcp2_log.h"

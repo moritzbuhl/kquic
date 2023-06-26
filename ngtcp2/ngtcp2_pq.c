@@ -25,7 +25,7 @@
  */
 #include "ngtcp2_pq.h"
 
-#include <linux/bug.h>
+
 
 #include "ngtcp2_macro.h"
 
