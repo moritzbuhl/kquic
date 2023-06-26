@@ -33,5 +33,10 @@ struct quic_sock {
 	struct sk_buff_head	reader_queue ____cacheline_aligned_in_smp;
 
 	int			forward_deficit;
+
+	struct ngtcp2_conn	*conn;
+	struct ngtcp2_cid	dcid, scid;
+	struct ngtcp2_path	path;
+	__u32			version;
 };
 #endif /* _QUIC_H */
