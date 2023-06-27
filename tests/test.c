@@ -167,6 +167,7 @@ main(int argc, char *argv[])
 	case -1:
 		err(1, "fork");
 	case 0:
+		alarm(1);
 		s = server();
 		log("%s: kill\n", __func__);
 		kill(ppid, SIGCHLD);
@@ -180,6 +181,7 @@ main(int argc, char *argv[])
 			err(1, "close");
 		break;
 	default:
+		alarm(1);
 		signal(SIGCHLD, handler);
 		while (!sig)
 			sleep(1);
