@@ -55,7 +55,7 @@ int
 server(void)
 {
 	struct sockaddr_in sin;
-	int s;
+	int s, v = 1;
 
 	sin.sin_family = AF_INET;
 	sin.sin_port = htons(4443);
@@ -63,6 +63,9 @@ server(void)
 
 	if ((s = socket(AF_INET, SOCK_STREAM, MYPROTO)) == -1)
 		err(1, "socket");
+
+	if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &v, sizeof(int)) == -1)
+		err(1, "setsockopt");
 
 	if (bind(s, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) == -1)
 		err(1, "bind");
