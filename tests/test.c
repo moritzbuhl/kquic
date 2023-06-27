@@ -43,6 +43,12 @@
 # define	MYPROTO	IPPROTO_TCP
 #endif
 
+#ifdef DEBUG
+# define 	log(...)	printf(__VA_ARGS__);
+#else
+# define 	log(...)
+#endif
+
 int sig = 0;
 
 void
@@ -61,15 +67,19 @@ server(void)
 	sin.sin_port = htons(4443);
 	sin.sin_addr.s_addr = inet_addr("127.0.0.1");
 
+	log("%s: socket\n", __func__);
 	if ((s = socket(AF_INET, SOCK_STREAM, MYPROTO)) == -1)
 		err(1, "socket");
 
+	log("%s: setsockopt\n", __func__);
 	if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &v, sizeof(int)) == -1)
 		err(1, "setsockopt");
 
+	log("%s: bind\n", __func__);
 	if (bind(s, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) == -1)
 		err(1, "bind");
 
+	log("%s: listen\n", __func__);
 	if (listen(s, 4096) == -1)
 		err(1, "listen");
 
@@ -88,14 +98,18 @@ serve(int s)
 	pfd[0].fd = s;
 	pfd[0].events = POLLIN;
 
+	log("%s: poll\n", __func__);
 	while (poll(pfd, 1, 1000) != -1) {
+		log("%s: accept\n", __func__);
 		if ((s = accept(s, (struct sockaddr *)&addr, &len)) == -1)
 			err(1, "accept");
+		log("%s: recv\n", __func__);
 		if (recv(s, buf, sizeof(buf), 0) == -1)
 			err(1, "recv");
 		printf("%s\n", buf);
 		
 		strcpy(buf, "ALL IS WELL.");
+		log("%s: send\n", __func__);
 		if (send(s, buf, 1024, 0) == -1)
 			err(1, "send");
 		return;
@@ -117,20 +131,26 @@ client(void)
 
 	strcpy(buf, "HELLO WORLD!");
 
+	log("%s: socket\n", __func__);
 	if ((s = socket(AF_INET, SOCK_STREAM, MYPROTO)) == -1)
 		err(1, "socket");
 
+	log("%s: connect\n", __func__);
 	if (connect(s, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) == -1)
 		err(1, "connect");
 
+	log("%s: send\n", __func__);
 	if (send(s, buf, 1024, 0) == -1)
 		err(1, "send");
+	log("%s: recv\n", __func__);
 	if (recv(s, buf, sizeof(buf), 0) == -1)
 		err(1, "recv");
 	printf("%s\n", buf);
 
+	log("%s: shutdown\n", __func__);
 	if (shutdown(s, SHUT_RDWR) == -1)
 		err(1, "shutdown");
+	log("%s: close\n", __func__);
 	if (close(s) == -1)
 		err(1, "close");
 }
@@ -148,11 +168,14 @@ main(int argc, char *argv[])
 		err(1, "fork");
 	case 0:
 		s = server();
+		log("%s: kill\n", __func__);
 		kill(ppid, SIGCHLD);
 		serve(s);
 
+		log("%s: shutdown\n", __func__);
 		if (shutdown(s, SHUT_RDWR) == -1)
 			err(1, "shutdown");
+		log("%s: close\n", __func__);
 		if (close(s) == -1)
 			err(1, "close");
 		break;
