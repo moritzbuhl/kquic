@@ -32,6 +32,7 @@
 #include <err.h>
 #include <errno.h>
 #include <poll.h>
+#include <signal.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -125,6 +126,8 @@ client(void)
 		err(1, "recv");
 	printf("%s\n", buf);
 
+	if (shutdown(s, SHUT_RDWR) == -1)
+		err(1, "shutdown");
 	if (close(s) == -1)
 		err(1, "close");
 }
@@ -133,7 +136,7 @@ int
 main(int argc, char *argv[])
 {
 	pid_t	ppid;
-	int	status = 0;
+	int	s, status = 0;
 
 	ppid = getpid();
 
@@ -141,10 +144,12 @@ main(int argc, char *argv[])
 	case -1:
 		err(1, "fork");
 	case 0:
-		int s = server();
+		s = server();
 		kill(ppid, SIGCHLD);
 		serve(s);
 
+		if (shutdown(s, SHUT_RDWR) == -1)
+			err(1, "shutdown");
 		if (close(s) == -1)
 			err(1, "close");
 		break;
