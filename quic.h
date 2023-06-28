@@ -24,6 +24,7 @@
  */
 
 #ifndef _QUIC_H
+#define _QUIC_H
 struct quic_sock {
 	struct inet_sock	inet;
 	int			pending;
