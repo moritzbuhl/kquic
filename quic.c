@@ -192,8 +192,13 @@ void quic_v4_rehash(struct sock *sk)
 
 int quic_v4_get_port(struct sock *sk, unsigned short snum)
 {
-	pr_info("%s\n", __func__);
-	return -1;
+	unsigned int hash2_nulladdr =
+		ipv4_portaddr_hash(sock_net(sk), htonl(INADDR_ANY), snum);
+	unsigned int hash2_partial =
+		ipv4_portaddr_hash(sock_net(sk), inet_sk(sk)->inet_rcv_saddr, 0);
+
+	quic_sk(sk)->udp_portaddr_hash = hash2_partial;
+        return udp_lib_get_port(sk, snum, hash2_nulladdr);
 }
 
 int quic_abort(struct sock *sk, int err)
