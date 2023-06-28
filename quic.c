@@ -228,8 +228,6 @@ struct proto quic_prot = {
 	.unhash			= udp_lib_unhash,
 	.rehash			= quic_v4_rehash,
 	.get_port		= quic_v4_get_port,
-	.memory_allocated	= &udp_memory_allocated,
-	.sysctl_mem		= sysctl_udp_mem,
 	.sysctl_wmem_offset	= offsetof(struct net, ipv4.sysctl_udp_wmem_min),
 	.sysctl_rmem_offset	= offsetof(struct net, ipv4.sysctl_udp_rmem_min),
 	.obj_size		= sizeof(struct udp_sock),
@@ -237,11 +235,34 @@ struct proto quic_prot = {
 	.diag_destroy		= quic_abort,
 };
 
+const struct proto_ops inet_quic_ops = {
+	.family		   = PF_INET,
+	.owner		   = THIS_MODULE,
+	.release	   = inet_release,
+	.bind		   = inet_bind,
+	.connect	   = inet_dgram_connect,
+	.socketpair	   = sock_no_socketpair,
+	.accept		   = sock_no_accept,
+	.getname	   = inet_getname,
+	.poll		   = udp_poll,
+	.ioctl		   = inet_ioctl,
+	.gettstamp	   = sock_gettstamp,
+	.listen		   = sock_no_listen,
+	.shutdown	   = inet_shutdown,
+	.setsockopt	   = sock_common_setsockopt,
+	.getsockopt	   = sock_common_getsockopt,
+	.sendmsg	   = inet_sendmsg,
+	.recvmsg	   = inet_recvmsg,
+	.mmap		   = sock_no_mmap,
+	.sendpage	   = inet_sendpage,
+	.set_peek_off	   = sk_set_peek_off,
+};
+
 static struct inet_protosw quic4_protosw = {
 	.type		= SOCK_STREAM,
 	.protocol	= IPPROTO_UDP,
 	.prot		= &quic_prot,
-	.ops		= &inet_dgram_ops,
+	.ops		= &inet_quic_ops,
 };
 
 static int __init quic_table_init(struct udp_table *table)
