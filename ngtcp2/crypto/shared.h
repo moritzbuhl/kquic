@@ -29,7 +29,7 @@
 #  include <config.h>
 #endif /* HAVE_CONFIG_H */
 
-#include <ngtcp2/ngtcp2_crypto.h>
+#include "ngtcp2_crypto.h"
 
 /**
  * @macro

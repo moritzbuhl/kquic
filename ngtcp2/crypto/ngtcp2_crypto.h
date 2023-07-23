@@ -25,7 +25,7 @@
 #ifndef NGTCP2_CRYPTO_H
 #define NGTCP2_CRYPTO_H
 
-#include <ngtcp2/ngtcp2.h>
+#include "../ngtcp2/ngtcp2.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -28,14 +28,14 @@
 #  include <winsock2.h>
 #  include <ws2tcpip.h>
 #else
-#  include <netinet/in.h>
+
 #endif
 
-#include <string.h>
-#include <assert.h>
 
-#include "ngtcp2_macro.h"
-#include "ngtcp2_net.h"
+
+
+#include "../ngtcp2_macro.h"
+#include "../ngtcp2_net.h"
 
 ngtcp2_crypto_md *ngtcp2_crypto_md_init(ngtcp2_crypto_md *md,
                                         void *md_native_handle) {
@@ -855,9 +855,9 @@ static int crypto_derive_token_key(uint8_t *key, size_t keylen, uint8_t *iv,
   uint8_t info[32];
   uint8_t *p;
 
-  assert(ngtcp2_crypto_md_hashlen(md) == sizeof(intsecret));
-  assert(info_prefixlen + sizeof(key_info_suffix) - 1 <= sizeof(info));
-  assert(info_prefixlen + sizeof(iv_info_suffix) - 1 <= sizeof(info));
+  BUG_ON(ngtcp2_crypto_md_hashlen(md) == sizeof(intsecret));
+  BUG_ON(info_prefixlen + sizeof(key_info_suffix) - 1 <= sizeof(info));
+  BUG_ON(info_prefixlen + sizeof(iv_info_suffix) - 1 <= sizeof(info));
 
   if (ngtcp2_crypto_hkdf_extract(intsecret, md, secret, secretlen, salt,
                                  saltlen) != 0) {
@@ -927,7 +927,7 @@ ngtcp2_ssize ngtcp2_crypto_generate_retry_token(
   ngtcp2_tstamp ts_be = ngtcp2_htonl64(ts);
   int rv;
 
-  assert((size_t)remote_addrlen <= sizeof(ngtcp2_sockaddr_union));
+  BUG_ON((size_t)remote_addrlen <= sizeof(ngtcp2_sockaddr_union));
 
   memset(plaintext, 0, sizeof(plaintext));
 
@@ -949,8 +949,8 @@ ngtcp2_ssize ngtcp2_crypto_generate_retry_token(
   keylen = ngtcp2_crypto_aead_keylen(&aead);
   ivlen = ngtcp2_crypto_aead_noncelen(&aead);
 
-  assert(sizeof(key) >= keylen);
-  assert(sizeof(iv) >= ivlen);
+  BUG_ON(sizeof(key) >= keylen);
+  BUG_ON(sizeof(iv) >= ivlen);
 
   if (crypto_derive_token_key(key, keylen, iv, ivlen, &md, secret, secretlen,
                               rand_data, sizeof(rand_data),
@@ -1009,7 +1009,7 @@ int ngtcp2_crypto_verify_retry_token(
   int rv;
   ngtcp2_tstamp gen_ts;
 
-  assert((size_t)remote_addrlen <= sizeof(ngtcp2_sockaddr_union));
+  BUG_ON((size_t)remote_addrlen <= sizeof(ngtcp2_sockaddr_union));
 
   if (tokenlen != NGTCP2_CRYPTO_MAX_RETRY_TOKENLEN ||
       token[0] != NGTCP2_CRYPTO_TOKEN_MAGIC_RETRY) {
@@ -1051,7 +1051,7 @@ int ngtcp2_crypto_verify_retry_token(
 
   cil = plaintext[0];
 
-  assert(cil == 0 || (cil >= NGTCP2_MIN_CIDLEN && cil <= NGTCP2_MAX_CIDLEN));
+  BUG_ON(cil == 0 || (cil >= NGTCP2_MIN_CIDLEN && cil <= NGTCP2_MAX_CIDLEN));
 
   memcpy(&gen_ts, plaintext + /* cid len = */ 1 + NGTCP2_MAX_CIDLEN,
          sizeof(gen_ts));
@@ -1082,8 +1082,8 @@ static size_t crypto_generate_regular_token_aad(uint8_t *dest,
     addrlen = sizeof(((const ngtcp2_sockaddr_in6 *)(void *)sa)->sin6_addr);
     break;
   default:
-    assert(0);
-    abort();
+    BUG_ON(0);
+    BUG();
   }
 
   memcpy(dest, addr, addrlen);
@@ -1129,8 +1129,8 @@ ngtcp2_ssize ngtcp2_crypto_generate_regular_token(
   keylen = ngtcp2_crypto_aead_keylen(&aead);
   ivlen = ngtcp2_crypto_aead_noncelen(&aead);
 
-  assert(sizeof(key) >= keylen);
-  assert(sizeof(iv) >= ivlen);
+  BUG_ON(sizeof(key) >= keylen);
+  BUG_ON(sizeof(iv) >= ivlen);
 
   if (crypto_derive_token_key(key, keylen, iv, ivlen, &md, secret, secretlen,
                               rand_data, sizeof(rand_data),

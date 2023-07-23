@@ -52,8 +52,8 @@
 #    endif /* WIN32_LEAN_AND_MEAN */
 #    include <ws2tcpip.h>
 #  else /* !WIN32 */
-#    include <sys/socket.h>
-#    include <netinet/in.h>
+
+
 #  endif /* !WIN32 */
 #endif   /* NGTCP2_USE_GENERIC_SOCKADDR */
 
