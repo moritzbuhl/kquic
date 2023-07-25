@@ -152,11 +152,13 @@ int ngtcp2_crypto_hp_mask(uint8_t *dest, const ngtcp2_crypto_cipher *hp,
 }
 
 int ngtcp2_crypto_random(uint8_t *data, size_t datalen) {
+	get_random_bytes(data, datalen);
 	return 0;
 }
 
 int ngtcp2_crypto_get_path_challenge_data_cb(ngtcp2_conn *conn, uint8_t *data,
 		void *user_data) {
+	get_random_bytes(data, NGTCP2_PATH_CHALLENGE_DATALEN);
 	return 0;
 }
 
