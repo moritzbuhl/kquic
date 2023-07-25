@@ -570,7 +570,7 @@ void ngtcp2_cc_cubic_cc_event(ngtcp2_cc *cc, ngtcp2_conn_stat *cstat,
     return;
   }
 
-  BUG_ON(ts >= last_ts);
+  assert(ts >= last_ts);
 
   cubic->epoch_start += ts - last_ts;
 }

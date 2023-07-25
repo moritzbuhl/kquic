@@ -19,3 +19,5 @@
 #define PRIx64	"llx"
 
 typedef uint32_t	socklen_t;
+
+#define assert(expr)	BUG_ON(!(expr))

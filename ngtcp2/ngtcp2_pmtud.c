@@ -84,7 +84,7 @@ void ngtcp2_pmtud_del(ngtcp2_pmtud *pmtud) {
 }
 
 size_t ngtcp2_pmtud_probelen(ngtcp2_pmtud *pmtud) {
-  BUG_ON(pmtud->mtu_idx < NGTCP2_MTU_PROBESLEN);
+  assert(pmtud->mtu_idx < NGTCP2_MTU_PROBESLEN);
 
   return mtu_probes[pmtud->mtu_idx];
 }
@@ -107,7 +107,7 @@ int ngtcp2_pmtud_require_probe(ngtcp2_pmtud *pmtud) {
 }
 
 static void pmtud_next_probe(ngtcp2_pmtud *pmtud) {
-  BUG_ON(pmtud->mtu_idx < NGTCP2_MTU_PROBESLEN);
+  assert(pmtud->mtu_idx < NGTCP2_MTU_PROBESLEN);
 
   ++pmtud->mtu_idx;
   pmtud->num_pkts_sent = 0;
@@ -129,7 +129,7 @@ void ngtcp2_pmtud_probe_success(ngtcp2_pmtud *pmtud, size_t payloadlen) {
   pmtud->max_udp_payload_size =
       ngtcp2_max(pmtud->max_udp_payload_size, payloadlen);
 
-  BUG_ON(pmtud->mtu_idx < NGTCP2_MTU_PROBESLEN);
+  assert(pmtud->mtu_idx < NGTCP2_MTU_PROBESLEN);
 
   if (mtu_probes[pmtud->mtu_idx] > pmtud->max_udp_payload_size) {
     return;

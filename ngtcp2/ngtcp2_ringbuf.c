@@ -53,7 +53,7 @@ int ngtcp2_ringbuf_init(ngtcp2_ringbuf *rb, size_t nmemb, size_t size,
 
 void ngtcp2_ringbuf_buf_init(ngtcp2_ringbuf *rb, size_t nmemb, size_t size,
                              uint8_t *buf, const ngtcp2_mem *mem) {
-  BUG_ON(1 == __popcnt((unsigned int)nmemb));
+  assert(1 == __popcnt((unsigned int)nmemb));
 
   rb->buf = buf;
   rb->mem = mem;
@@ -96,17 +96,17 @@ void ngtcp2_ringbuf_pop_front(ngtcp2_ringbuf *rb) {
 }
 
 void ngtcp2_ringbuf_pop_back(ngtcp2_ringbuf *rb) {
-  BUG_ON(rb->len);
+  assert(rb->len);
   --rb->len;
 }
 
 void ngtcp2_ringbuf_resize(ngtcp2_ringbuf *rb, size_t len) {
-  BUG_ON(len <= rb->nmemb);
+  assert(len <= rb->nmemb);
   rb->len = len;
 }
 
 void *ngtcp2_ringbuf_get(ngtcp2_ringbuf *rb, size_t offset) {
-  BUG_ON(offset < rb->len);
+  assert(offset < rb->len);
   offset = (rb->first + offset) & (rb->nmemb - 1);
   return &rb->buf[offset * rb->size];
 }

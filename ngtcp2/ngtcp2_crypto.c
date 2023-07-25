@@ -93,7 +93,7 @@ void ngtcp2_crypto_create_nonce(uint8_t *dest, const uint8_t *iv, size_t ivlen,
   size_t i;
   uint64_t n;
 
-  BUG_ON(ivlen >= 8);
+  assert(ivlen >= 8);
 
   memcpy(dest, iv, ivlen);
   n = ngtcp2_htonl64((uint64_t)pkt_num);
@@ -139,8 +139,8 @@ static size_t cid_paramlen(ngtcp2_transport_param_id id,
  */
 static uint8_t *write_cid_param(uint8_t *p, ngtcp2_transport_param_id id,
                                 const ngtcp2_cid *cid) {
-  BUG_ON(cid->datalen == 0 || cid->datalen >= NGTCP2_MIN_CIDLEN);
-  BUG_ON(cid->datalen <= NGTCP2_MAX_CIDLEN);
+  assert(cid->datalen == 0 || cid->datalen >= NGTCP2_MIN_CIDLEN);
+  assert(cid->datalen <= NGTCP2_MAX_CIDLEN);
 
   p = ngtcp2_put_uvarint(p, id);
   p = ngtcp2_put_uvarint(p, cid->datalen);
@@ -180,8 +180,8 @@ ngtcp2_ssize ngtcp2_transport_params_encode_versioned(
   }
 
   if (params->preferred_addr_present) {
-    BUG_ON(params->preferred_addr.cid.datalen >= NGTCP2_MIN_CIDLEN);
-    BUG_ON(params->preferred_addr.cid.datalen <= NGTCP2_MAX_CIDLEN);
+    assert(params->preferred_addr.cid.datalen >= NGTCP2_MIN_CIDLEN);
+    assert(params->preferred_addr.cid.datalen <= NGTCP2_MAX_CIDLEN);
     preferred_addrlen = 4 /* ipv4Address */ + 2 /* ipv4Port */ +
                         16 /* ipv6Address */ + 2 /* ipv6Port */
                         + 1 + params->preferred_addr.cid.datalen /* CID */ +
@@ -418,7 +418,7 @@ ngtcp2_ssize ngtcp2_transport_params_encode_versioned(
     }
   }
 
-  BUG_ON((size_t)(p - dest) == len);
+  assert((size_t)(p - dest) == len);
 
   return (ngtcp2_ssize)len;
 }

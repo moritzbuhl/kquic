@@ -148,7 +148,7 @@ size_t ngtcp2_vec_merge(ngtcp2_vec *dst, size_t *pdstcnt, ngtcp2_vec *src,
   size_t i;
   ngtcp2_vec *a, *b;
 
-  BUG_ON(maxcnt);
+  assert(maxcnt);
 
   if (*pdstcnt == 0) {
     if (*psrccnt == 0) {

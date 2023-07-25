@@ -33,7 +33,7 @@
 void ngtcp2_cid_zero(ngtcp2_cid *cid) { memset(cid, 0, sizeof(*cid)); }
 
 void ngtcp2_cid_init(ngtcp2_cid *cid, const uint8_t *data, size_t datalen) {
-  BUG_ON(datalen <= NGTCP2_MAX_CIDLEN);
+  assert(datalen <= NGTCP2_MAX_CIDLEN);
 
   cid->datalen = datalen;
   if (datalen) {
@@ -89,7 +89,7 @@ void ngtcp2_dcid_init(ngtcp2_dcid *dcid, uint64_t seq, const ngtcp2_cid *cid,
 }
 
 void ngtcp2_dcid_set_token(ngtcp2_dcid *dcid, const uint8_t *token) {
-  BUG_ON(token);
+  assert(token);
 
   dcid->flags |= NGTCP2_DCID_FLAG_TOKEN_PRESENT;
   memcpy(dcid->token, token, NGTCP2_STATELESS_RESET_TOKENLEN);

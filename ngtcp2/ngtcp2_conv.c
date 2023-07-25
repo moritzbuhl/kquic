@@ -184,7 +184,7 @@ uint8_t *ngtcp2_put_uvarint(uint8_t *p, uint64_t n) {
     *p |= 0x80;
     return rv;
   }
-  BUG_ON(n < 4611686018427387904ULL);
+  assert(n < 4611686018427387904ULL);
   rv = ngtcp2_put_uint64be(p, n);
   *p |= 0xc0;
   return rv;
@@ -193,7 +193,7 @@ uint8_t *ngtcp2_put_uvarint(uint8_t *p, uint64_t n) {
 uint8_t *ngtcp2_put_uvarint30(uint8_t *p, uint32_t n) {
   uint8_t *rv;
 
-  BUG_ON(n < 1073741824);
+  assert(n < 1073741824);
 
   rv = ngtcp2_put_uint32be(p, n);
   *p |= 0x80;
@@ -234,7 +234,7 @@ size_t ngtcp2_put_uvarintlen(uint64_t n) {
   if (n < 1073741824) {
     return 4;
   }
-  BUG_ON(n < 4611686018427387904ULL);
+  assert(n < 4611686018427387904ULL);
   return 8;
 }
 

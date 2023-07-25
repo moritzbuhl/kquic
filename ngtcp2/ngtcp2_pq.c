@@ -89,7 +89,7 @@ int ngtcp2_pq_push(ngtcp2_pq *pq, ngtcp2_pq_entry *item) {
 }
 
 ngtcp2_pq_entry *ngtcp2_pq_top(ngtcp2_pq *pq) {
-  BUG_ON(pq->length);
+  assert(pq->length);
   return pq->q[0];
 }
 
@@ -124,7 +124,7 @@ void ngtcp2_pq_pop(ngtcp2_pq *pq) {
 }
 
 void ngtcp2_pq_remove(ngtcp2_pq *pq, ngtcp2_pq_entry *item) {
-  BUG_ON(pq->q[item->index] == item);
+  assert(pq->q[item->index] == item);
 
   if (item->index == 0) {
     ngtcp2_pq_pop(pq);

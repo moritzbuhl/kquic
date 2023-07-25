@@ -721,7 +721,7 @@ static void qlog_pkt_write_end(ngtcp2_qlog *qlog, const ngtcp2_pkt_hd *hd,
     return;
   }
 
-  BUG_ON(ngtcp2_buf_len(&qlog->buf));
+  assert(ngtcp2_buf_len(&qlog->buf));
 
   /* Eat last ',' */
   if (*(p - 1) == ',') {

@@ -121,7 +121,7 @@ int ngtcp2_acktr_add(ngtcp2_acktr *acktr, int64_t pkt_num, int active_ack,
       ngtcp2_ksl_it_prev(&it);
       ent = ngtcp2_ksl_it_get(&it);
 
-      BUG_ON(ent->pkt_num >= pkt_num + (int64_t)ent->len);
+      assert(ent->pkt_num >= pkt_num + (int64_t)ent->len);
 
       if (ent->pkt_num == pkt_num + (int64_t)ent->len) {
         ++ent->len;
@@ -130,7 +130,7 @@ int ngtcp2_acktr_add(ngtcp2_acktr *acktr, int64_t pkt_num, int active_ack,
     } else {
       ent = ngtcp2_ksl_it_get(&it);
 
-      BUG_ON(ent->pkt_num != pkt_num);
+      assert(ent->pkt_num != pkt_num);
 
       if (ngtcp2_ksl_it_begin(&it)) {
         if (ent->pkt_num + 1 == pkt_num) {
@@ -145,7 +145,7 @@ int ngtcp2_acktr_add(ngtcp2_acktr *acktr, int64_t pkt_num, int active_ack,
         ngtcp2_ksl_it_prev(&prev_it);
         prev_ent = ngtcp2_ksl_it_get(&prev_it);
 
-        BUG_ON(prev_ent->pkt_num >= pkt_num + (int64_t)prev_ent->len);
+        assert(prev_ent->pkt_num >= pkt_num + (int64_t)prev_ent->len);
 
         if (ent->pkt_num + 1 == pkt_num) {
           if (prev_ent->pkt_num == pkt_num + (int64_t)prev_ent->len) {
@@ -202,7 +202,7 @@ void ngtcp2_acktr_forget(ngtcp2_acktr *acktr, ngtcp2_acktr_entry *ent) {
   ngtcp2_ksl_it it;
 
   it = ngtcp2_ksl_lower_bound(&acktr->ents, &ent->pkt_num);
-  BUG_ON(*(int64_t *)ngtcp2_ksl_it_key(&it) == (int64_t)ent->pkt_num);
+  assert(*(int64_t *)ngtcp2_ksl_it_key(&it) == (int64_t)ent->pkt_num);
 
   for (; !ngtcp2_ksl_it_end(&it);) {
     ent = ngtcp2_ksl_it_get(&it);
@@ -248,7 +248,7 @@ static void acktr_on_ack(ngtcp2_acktr *acktr, ngtcp2_ringbuf *rb,
   ngtcp2_acktr_entry *ent;
   ngtcp2_ksl_it it;
 
-  BUG_ON(ngtcp2_ringbuf_len(rb));
+  assert(ngtcp2_ringbuf_len(rb));
 
   ack_ent = ngtcp2_ringbuf_get(rb, ack_ent_offset);
 
@@ -260,7 +260,7 @@ static void acktr_on_ack(ngtcp2_acktr *acktr, ngtcp2_ringbuf *rb,
   }
 
   if (ngtcp2_ksl_len(&acktr->ents)) {
-    BUG_ON(ngtcp2_ksl_it_end(&it));
+    assert(ngtcp2_ksl_it_end(&it));
 
     ngtcp2_ksl_it_prev(&it);
     ent = ngtcp2_ksl_it_get(&it);

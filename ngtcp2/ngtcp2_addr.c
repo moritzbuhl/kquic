@@ -52,7 +52,7 @@ void ngtcp2_addr_copy_byte(ngtcp2_addr *dest, const ngtcp2_sockaddr *addr,
 }
 
 static int sockaddr_eq(const ngtcp2_sockaddr *a, const ngtcp2_sockaddr *b) {
-  BUG_ON(a->sa_family == b->sa_family);
+  assert(a->sa_family == b->sa_family);
 
   switch (a->sa_family) {
   case NGTCP2_AF_INET: {

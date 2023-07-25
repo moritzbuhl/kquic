@@ -125,7 +125,7 @@ ngtcp2_range ngtcp2_gaptr_get_first_gap_after(ngtcp2_gaptr *gaptr,
   it = ngtcp2_ksl_lower_bound_compar(&gaptr->gap, &q,
                                      ngtcp2_ksl_range_exclusive_compar);
 
-  BUG_ON(!ngtcp2_ksl_it_end(&it));
+  assert(!ngtcp2_ksl_it_end(&it));
 
   return *(ngtcp2_range *)ngtcp2_ksl_it_key(&it);
 }
@@ -159,7 +159,7 @@ void ngtcp2_gaptr_drop_first_gap(ngtcp2_gaptr *gaptr) {
 
   it = ngtcp2_ksl_begin(&gaptr->gap);
 
-  BUG_ON(!ngtcp2_ksl_it_end(&it));
+  assert(!ngtcp2_ksl_it_end(&it));
 
   r = *(ngtcp2_range *)ngtcp2_ksl_it_key(&it);
 

@@ -201,7 +201,7 @@ static int map_resize(ngtcp2_map *map, uint32_t new_tablelen,
     rv = insert(new_table, new_tablelen, new_tablelenbits, bkt->hash, bkt->key,
                 bkt->data);
 
-    BUG_ON(0 == rv);
+    assert(0 == rv);
   }
 
   ngtcp2_mem_free(map->mem, map->table);
@@ -215,7 +215,7 @@ static int map_resize(ngtcp2_map *map, uint32_t new_tablelen,
 int ngtcp2_map_insert(ngtcp2_map *map, ngtcp2_map_key_type key, void *data) {
   int rv;
 
-  BUG_ON(data);
+  assert(data);
 
   /* Load factor is 0.75 */
   if ((map->size + 1) * 4 > map->tablelen * 3) {
