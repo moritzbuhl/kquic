@@ -1,5 +1,5 @@
 /*
- * quic.h
+ * ngtcp2.c
  *
  * Copyright (c) 2023 Moritz Buhl <m.buhl@tum.de>
  *
@@ -23,28 +23,22 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef _QUIC_H
-#define _QUIC_H
+#include "config.h"
+#include "ngtcp2/ngtcp2/ngtcp2.h"
 
-struct quic_sock {
-	struct inet_sock	inet;
-	int			pending;
+int get_new_connection_id_cb(ngtcp2_conn *conn, ngtcp2_cid *cid,
+		uint8_t *token, size_t cidlen,
+		void *user_data) {
 
-	__u16			len;
+	get_random_bytes(cid->data, cidlen);
 
-	struct sk_buff_head	reader_queue ____cacheline_aligned_in_smp;
+	cid->datalen = cidlen;
 
-	int			forward_deficit;
+	get_random_bytes(token, NGTCP2_STATELESS_RESET_TOKENLEN);
 
-	struct ngtcp2_conn	*conn;
-	struct ngtcp2_cid	dcid, scid;
-	struct ngtcp2_path	path;
-	__u32			version;
-};
-
-static inline struct quic_sock *quic_sk(const struct sock *sk)
-{
-	return (struct quic_sock *)sk;
+	return 0;
 }
 
-#endif /* _QUIC_H */
+void rand_cb(uint8_t *dest, size_t destlen, const ngtcp2_rand_ctx *rand_ctx) {
+	get_random_bytes(dest, destlen);
+}

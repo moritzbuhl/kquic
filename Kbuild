@@ -2,11 +2,15 @@
 #
 # Copyright (C) 2020 Dave Voutila <dave@sisu.io>. All rights reserved.
 
-ccflags-y := -O3 -Wall -I$(PWD) -DHAVE_CONFIG_H -DNGTCP2_USE_GENERIC_SOCKADDR
+KBUILD_EXTRA_SYMBOLS := $(PWD)/wolfssl/linuxkm/Module.symvers
+
+ccflags-y := -O3 -Wall -I$(PWD) -I$(PWD)/wolfssl \
+	-DHAVE_CONFIG_H -DNGTCP2_USE_GENERIC_SOCKADDR \
+	-DWOLFSSL_LINUXKM -DHAVE_HKDF
 ccflags-$(CONFIG_INET_QUIC_DEBUG) += -DDEBUG -g
 
 obj-m :=	kquic.o
-kquic-y :=	quic.o \
+kquic-y :=	quic.o crypto.o ngtcp2.o ngtcp2/crypto/shared.o \
 	ngtcp2/ngtcp2_acktr.o ngtcp2/ngtcp2_buf.o \
 	ngtcp2/ngtcp2_conversion.o ngtcp2/ngtcp2_ksl.o ngtcp2/ngtcp2_opl.o \
 	ngtcp2/ngtcp2_pq.o ngtcp2/ngtcp2_rob.o ngtcp2/ngtcp2_unreachable.o \

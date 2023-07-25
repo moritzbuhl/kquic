@@ -36,6 +36,7 @@
 #include "ngtcp2/ngtcp2/ngtcp2.h"
 #include "ngtcp2/ngtcp2/version.h"
 #include "authors.h"
+#include "ngtcp2.h"
 #include "quic.h"
 
 struct udp_table quic_table __read_mostly;
@@ -349,3 +350,5 @@ module_exit(quic_exit);
 MODULE_LICENSE("Dual MIT/GPL");
 MODULE_DESCRIPTION("QUIC - RFC9000");
 MODULE_VERSION(NGTCP2_VERSION);
+MODULE_IMPORT_NS(WOLFSSL);
+MODULE_SOFTDEP("pre: libwolfssl.ko");

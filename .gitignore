@@ -1,3 +1,6 @@
+# Dependencies
+wolfssl/
+
 # Build products
 authors.h
 
