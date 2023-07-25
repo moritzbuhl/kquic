@@ -23,6 +23,8 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <wolfssl/wolfcrypt/hmac.h>
+
 #include "config.h"
 #include "ngtcp2/ngtcp2/ngtcp2.h"
 
@@ -30,20 +32,34 @@ int ngtcp2_crypto_hkdf_expand(uint8_t *dest, size_t destlen,
 		const ngtcp2_crypto_md *md, const uint8_t *secret,
 		size_t secretlen, const uint8_t *info,
 		size_t infolen) {
-	return 0;
+	if (destlen > UINT_MAX || secretlen > UINT_MAX || infolen > UINT_MAX)
+		return -1;
+
+	return wc_HKDF_Expand(WC_SHA256, secret, secretlen, info, infolen, dest,
+			destlen);
 }
 
 int ngtcp2_crypto_hkdf_extract(uint8_t *dest, const ngtcp2_crypto_md *md,
 		const uint8_t *secret, size_t secretlen,
 		const uint8_t *salt, size_t saltlen) {
-	return 0;
+
+	if (saltlen > UINT_MAX || secretlen > UINT_MAX)
+		return -1;
+
+	return wc_HKDF_Extract(WC_SHA256, salt, saltlen, secret, secretlen, dest);
 }
 
 int ngtcp2_crypto_hkdf(uint8_t *dest, size_t destlen,
 		const ngtcp2_crypto_md *md, const uint8_t *secret,
 		size_t secretlen, const uint8_t *salt, size_t saltlen,
 		const uint8_t *info, size_t infolen) {
-	return 0;
+
+	if (destlen > UINT_MAX || infolen > UINT_MAX || saltlen > UINT_MAX ||
+			secretlen > UINT_MAX)
+		return -1;
+
+	return wc_HKDF(WC_SHA256, secret, secretlen, salt, saltlen, info,
+		infolen, dest, destlen);
 }
 
 int ngtcp2_crypto_aead_ctx_decrypt_init(ngtcp2_crypto_aead_ctx *aead_ctx,
