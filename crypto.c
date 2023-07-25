@@ -23,6 +23,8 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <crypto/aead.h>
+#include <crypto/gcm.h>
 #include <wolfssl/wolfcrypt/hmac.h>
 
 #include "config.h"
@@ -112,7 +114,7 @@ int ngtcp2_crypto_set_remote_transport_params(ngtcp2_conn *conn, void *tls) {
 }
 
 size_t ngtcp2_crypto_aead_noncelen(const ngtcp2_crypto_aead *aead) {
-	return 0;
+	return GCM_AES_IV_SIZE;
 }
 
 
