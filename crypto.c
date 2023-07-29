@@ -23,6 +23,8 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <linux/random.h>
+
 #include <crypto/aead.h>
 #include <crypto/gcm.h>
 #include <wolfssl/wolfcrypt/hmac.h>

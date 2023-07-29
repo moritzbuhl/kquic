@@ -23,6 +23,8 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <linux/random.h>
+
 #include "config.h"
 #include "ngtcp2/ngtcp2/ngtcp2.h"
 
