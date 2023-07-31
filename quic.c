@@ -100,8 +100,24 @@ int quic_err(struct sk_buff *skb, u32 info)
 
 int quic_v4_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 {
+	struct quic_sock *qp = quic_sk(sk);
+	ngtcp2_settings settings;
+	ngtcp2_transport_params params;
+	int ret;
+
 	pr_info("%s\n", __func__);
-	return -1;
+
+	ngtcp2_settings_default(&settings);
+	ngtcp2_transport_params_default(&params);
+
+	get_random_bytes(qp->dcid.data, NGTCP2_MIN_INITIAL_DCIDLEN);
+	qp->dcid.datalen = NGTCP2_MIN_INITIAL_DCIDLEN;
+	get_random_bytes(qp->scid.data, NGTCP2_MAX_CIDLEN);
+	qp->scid.datalen = NGTCP2_MAX_CIDLEN;
+	ret = ngtcp2_conn_client_new(&(qp->conn), &(qp->dcid), &(qp->scid),
+		&(qp->path), NGTCP2_PROTO_VER_MAX, &ngtcp2_cbs, &settings,
+		&params, NULL, NULL);
+	return ret;
 }
 
 static void quic_destruct_sock(struct sock *sk)
@@ -231,7 +247,7 @@ struct proto quic_prot = {
 	.get_port		= quic_v4_get_port,
 	.sysctl_wmem_offset	= offsetof(struct net, ipv4.sysctl_udp_wmem_min),
 	.sysctl_rmem_offset	= offsetof(struct net, ipv4.sysctl_udp_rmem_min),
-	.obj_size		= sizeof(struct udp_sock),
+	.obj_size		= sizeof(struct quic_sock),
 	.h.udp_table		= &quic_table,
 	.diag_destroy		= quic_abort,
 };
