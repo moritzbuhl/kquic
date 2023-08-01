@@ -26,7 +26,10 @@ module: authors.h
 	@$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
 
 module-debug:
-	@$(MAKE) -C $(KERNELDIR) M=$(PWD) CONFIG_VMMCI_DEBUG=y modules
+	@if ! [ $(KERNEL_MAJOR) -ge 6 -a $(KERNEL_MINOR) -ge 2 ]; then \
+	    $(MAKE) -C $(KERNELDIR) M=$(PWD)/compat/linux modules; \
+	fi
+	@$(MAKE) -C $(KERNELDIR) M=$(PWD) CONFIG_INET_QUIC_DEBUG=y modules
 
 clean:
 	@if ! [ $(KERNEL_MAJOR) -ge 6 -a $(KERNEL_MINOR) -ge 2 ]; then \
