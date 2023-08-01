@@ -23,14 +23,22 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <linux/random.h>
+/* do not use the wolfcrypt AES implementation, use the kernel one instead. */
+#define NO_AES
 
 #include <crypto/aead.h>
 #include <crypto/gcm.h>
+
 #include <wolfssl/wolfcrypt/hmac.h>
 
 #include "config.h"
 #include "ngtcp2/ngtcp2/ngtcp2.h"
+#include "ngtcp2/crypto/shared.h"
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,2,0)
+# include "compat/linux/aesgcm.h"
+#endif
+
 
 int ngtcp2_crypto_hkdf_expand(uint8_t *dest, size_t destlen,
 		const ngtcp2_crypto_md *md, const uint8_t *secret,
@@ -69,6 +77,17 @@ int ngtcp2_crypto_hkdf(uint8_t *dest, size_t destlen,
 int ngtcp2_crypto_aead_ctx_decrypt_init(ngtcp2_crypto_aead_ctx *aead_ctx,
 		const ngtcp2_crypto_aead *aead,
 		const uint8_t *key, size_t noncelen) {
+	struct aesgcm_ctx *hd;
+	unsigned int keylen;
+
+	if ((hd = kmalloc(sizeof(struct crypto_aes_ctx), GFP_KERNEL)) == NULL)
+		return -1;
+
+	keylen = ngtcp2_crypto_aead_keylen(aead);
+	if (aesgcm_expandkey(hd, key, keylen, noncelen) != 0)
+		return -1;
+
+	aead_ctx->native_handle = hd;
 	return 0;
 }
 
@@ -84,11 +103,30 @@ int ngtcp2_crypto_decrypt(uint8_t *dest, const ngtcp2_crypto_aead *aead,
 		const uint8_t *ciphertext, size_t ciphertextlen,
 		const uint8_t *nonce, size_t noncelen,
 		const uint8_t *aad, size_t aadlen) {
+	uint8_t *auth_tag = dest + ciphertextlen;
+
+	if (!aesgcm_decrypt(aead_ctx->native_handle, dest, ciphertext,
+                    ciphertextlen, aad, aadlen, nonce, auth_tag))
+		return -1;
+	return 0;
+}
+
+int ngtcp2_crypto_encrypt(uint8_t *dest, const ngtcp2_crypto_aead *aead,
+		const ngtcp2_crypto_aead_ctx *aead_ctx,
+		const uint8_t *plaintext, size_t plaintextlen,
+		const uint8_t *nonce, size_t noncelen,
+		const uint8_t *aad, size_t aadlen) {
+	uint8_t *auth_dest = dest + plaintextlen;
+
+	aesgcm_encrypt(aead_ctx->native_handle, dest, plaintext,
+                    plaintextlen, aad, aadlen, nonce, auth_dest);
 	return 0;
 }
 
 ngtcp2_crypto_aead *ngtcp2_crypto_aead_init(ngtcp2_crypto_aead *aead,
 		void *aead_native_handle) {
+	aead->native_handle = aead_native_handle;
+	aead->max_overhead = GCM_AES_IV_SIZE;
 	return aead;
 }
 
@@ -101,14 +139,8 @@ size_t ngtcp2_crypto_md_hashlen(const ngtcp2_crypto_md *md) {
 }
 
 void ngtcp2_crypto_aead_ctx_free(ngtcp2_crypto_aead_ctx *aead_ctx) {
-}
-
-int ngtcp2_crypto_encrypt(uint8_t *dest, const ngtcp2_crypto_aead *aead,
-		const ngtcp2_crypto_aead_ctx *aead_ctx,
-		const uint8_t *plaintext, size_t plaintextlen,
-		const uint8_t *nonce, size_t noncelen,
-		const uint8_t *aad, size_t aadlen) {
-	return 0;
+	if (aead_ctx->native_handle)
+		kfree(aead_ctx->native_handle);
 }
 
 int ngtcp2_crypto_set_remote_transport_params(ngtcp2_conn *conn, void *tls) {
@@ -116,7 +148,7 @@ int ngtcp2_crypto_set_remote_transport_params(ngtcp2_conn *conn, void *tls) {
 }
 
 size_t ngtcp2_crypto_aead_noncelen(const ngtcp2_crypto_aead *aead) {
-	return GCM_AES_IV_SIZE;
+	return ((struct aesgcm_ctx *)aead->native_handle)->authsize;
 }
 
 
@@ -129,12 +161,9 @@ ngtcp2_crypto_ctx *ngtcp2_crypto_ctx_tls(ngtcp2_crypto_ctx *ctx,
 	return NULL;
 }
  
-static size_t crypto_aead_keylen(const u8 *aead) {
-	return 0;
-}
-
 size_t ngtcp2_crypto_aead_keylen(const ngtcp2_crypto_aead *aead) {
-	return crypto_aead_keylen(aead->native_handle);
+	/* only aes_128_gcm */
+	return 16;
 }
 
 ngtcp2_crypto_ctx *ngtcp2_crypto_ctx_tls_early(ngtcp2_crypto_ctx *ctx,

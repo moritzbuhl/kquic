@@ -3,6 +3,8 @@
 # Copyright (C) 2020 Dave Voutila <dave@sisu.io>. All rights reserved.
 
 KERNELRELEASE ?= $(shell uname -r)
+KERNEL_MAJOR ?= $(shell uname -r | cut -d. -f1)
+KERNEL_MINOR ?= $(shell uname -r | cut -d. -f2)
 KERNELDIR ?= /lib/modules/$(KERNELRELEASE)/build
 DEPMOD ?= depmod
 PWD := $(shell pwd)
@@ -18,12 +20,18 @@ authors.h:
 	done
 
 module: authors.h
+	@if ! [ $(KERNEL_MAJOR) -ge 6 -a $(KERNEL_MINOR) -ge 2 ]; then \
+	    $(MAKE) -C $(KERNELDIR) M=$(PWD)/compat/linux modules; \
+	fi
 	@$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
 
 module-debug:
 	@$(MAKE) -C $(KERNELDIR) M=$(PWD) CONFIG_VMMCI_DEBUG=y modules
 
 clean:
+	@if ! [ $(KERNEL_MAJOR) -ge 6 -a $(KERNEL_MINOR) -ge 2 ]; then \
+	    $(MAKE) -C $(KERNELDIR) M=$(PWD)/compat/linux clean; \
+	fi
 	@$(MAKE) -C $(KERNELDIR) M=$(PWD) clean
 	@$(MAKE) -C tests clean
 	rm -f authors.h

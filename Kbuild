@@ -3,6 +3,7 @@
 # Copyright (C) 2020 Dave Voutila <dave@sisu.io>. All rights reserved.
 
 KBUILD_EXTRA_SYMBOLS := $(PWD)/wolfssl/linuxkm/Module.symvers
+KBUILD_EXTRA_SYMBOLS += $(PWD)/compat/linux/Module.symvers
 
 ccflags-y := -O3 -Wall -I$(PWD) -I$(PWD)/wolfssl \
 	-DHAVE_CONFIG_H -DNGTCP2_USE_GENERIC_SOCKADDR \
