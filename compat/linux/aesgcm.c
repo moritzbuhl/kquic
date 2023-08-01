@@ -13,6 +13,8 @@
 
 #include <asm/irqflags.h>
 
+#include "aesgcm.h"
+
 static void aesgcm_encrypt_block(const struct crypto_aes_ctx *ctx, void *dst,
 				 const void *src)
 {

@@ -1,3 +1,6 @@
+#ifndef _COMPAT_AESGCM_H
+#define _COMPAT_AESGCM_H
+
 #include <crypto/gcm.h>
 #include <crypto/aes.h>
 #include <crypto/gf128mul.h>
@@ -19,3 +22,5 @@ bool __must_check aesgcm_decrypt(const struct aesgcm_ctx *ctx, u8 *dst,
 				 const u8 *src, int crypt_len, const u8 *assoc,
 				 int assoc_len, const u8 iv[GCM_AES_IV_SIZE],
 				 const u8 *authtag);
+
+#endif
