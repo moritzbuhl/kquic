@@ -11,7 +11,8 @@ ccflags-y := -O3 -Wall -I$(PWD) -I$(PWD)/wolfssl \
 ccflags-$(CONFIG_INET_QUIC_DEBUG) += -DDEBUG -g
 
 obj-m :=	kquic.o
-kquic-y :=	quic.o crypto.o ngtcp2.o ngtcp2/crypto/shared.o \
+kquic-y :=	quic.o crypto.o ngtcp2.o
+kquic-y +=	ngtcp2/crypto/shared.o \
 	ngtcp2/ngtcp2_acktr.o ngtcp2/ngtcp2_buf.o \
 	ngtcp2/ngtcp2_conversion.o ngtcp2/ngtcp2_ksl.o ngtcp2/ngtcp2_opl.o \
 	ngtcp2/ngtcp2_pq.o ngtcp2/ngtcp2_rob.o ngtcp2/ngtcp2_unreachable.o \
