@@ -178,6 +178,19 @@ int quic_getsockopt(struct sock *sk, int level, int optname,
 	return -1;
 }
 
+int quic_sendmsg(struct sock *sk, struct msghdr *msg, size_t len)
+{
+	pr_info("%s\n", __func__);
+
+	if (sk->sk_type == SOCK_DGRAM)
+		goto udpout;
+
+	return -1;
+
+udpout:
+	return udp_prot.sendmsg(sk, msg, len);
+}
+
 int quic_recvmsg(struct sock *sk, struct msghdr *msg, size_t len,
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(5,13,0)
 		int nonblock,
@@ -185,7 +198,18 @@ int quic_recvmsg(struct sock *sk, struct msghdr *msg, size_t len,
 		int flags, int *addr_len)
 {
 	pr_info("%s\n", __func__);
+
+	if (sk->sk_type == SOCK_DGRAM)
+		goto udpin;
+
 	return -1;
+
+udpin:
+	return udp_prot.recvmsg(sk, msg, len,
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5,13,0)
+	nonblock,
+#endif
+	flags, addr_len);
 }
 
 int quic_sendpage(struct sock *sk, struct page *page, int offset, size_t size,
@@ -237,7 +261,7 @@ struct proto quic_prot = {
 	.destroy		= quic_destroy_sock,
 	.setsockopt		= quic_setsockopt,
 	.getsockopt		= quic_getsockopt,
-	.sendmsg		= udp_sendmsg,
+	.sendmsg		= quic_sendmsg,
 	.recvmsg		= quic_recvmsg,
 	.sendpage		= quic_sendpage,
 	.release_cb		= quic_release_cb,
