@@ -23,6 +23,8 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <linux/random.h>
+
 /* do not use the wolfcrypt AES implementation, use the kernel one instead. */
 #define NO_AES
 

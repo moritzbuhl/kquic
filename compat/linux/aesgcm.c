@@ -682,7 +682,8 @@ static struct {
 
 static int __init libaesgcm_init(void)
 {
-	for (int i = 0; i < ARRAY_SIZE(aesgcm_tv); i++) {
+	int i;
+	for (i = 0; i < ARRAY_SIZE(aesgcm_tv); i++) {
 		u8 tagbuf[AES_BLOCK_SIZE];
 		int plen = aesgcm_tv[i].plen;
 		struct aesgcm_ctx ctx;
