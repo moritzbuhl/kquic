@@ -114,9 +114,16 @@ int quic_v4_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 	qp->dcid.datalen = NGTCP2_MIN_INITIAL_DCIDLEN;
 	get_random_bytes(qp->scid.data, NGTCP2_MAX_CIDLEN);
 	qp->scid.datalen = NGTCP2_MAX_CIDLEN;
+
 	ret = ngtcp2_conn_client_new(&(qp->conn), &(qp->dcid), &(qp->scid),
 		&(qp->path), NGTCP2_PROTO_VER_MAX, &ngtcp2_cbs, &settings,
 		&params, NULL, NULL);
+	if (ret != 0) {
+		pr_info("%s: ngtcp2_conn_client_new failed: %d\n", __func__,
+			ret);
+		return -1;
+	}
+
 	return ret;
 }
 
