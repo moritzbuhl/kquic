@@ -27,7 +27,7 @@
 #define _QUIC_H
 
 struct quic_sock {
-	struct inet_sock	inet;
+	struct udp_sock		udp;
 	int			pending;
 
 	__u16			len;

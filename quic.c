@@ -185,8 +185,6 @@ int quic_sendmsg(struct sock *sk, struct msghdr *msg, size_t len)
 	if (sk->sk_type == SOCK_DGRAM)
 		goto udpout;
 
-	return -1;
-
 udpout:
 	return udp_prot.sendmsg(sk, msg, len);
 }
@@ -238,7 +236,7 @@ int quic_v4_get_port(struct sock *sk, unsigned short snum)
 	unsigned int hash2_partial =
 		ipv4_portaddr_hash(sock_net(sk), inet_sk(sk)->inet_rcv_saddr, 0);
 
-	quic_sk(sk)->udp_portaddr_hash = hash2_partial;
+	udp_sk(sk)->udp_portaddr_hash = hash2_partial;
         return udp_lib_get_port(sk, snum, hash2_nulladdr);
 }
 
