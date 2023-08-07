@@ -66,5 +66,26 @@ wolfssl/Makefile: wolfssl/configure
 wolfssl/linuxkm/libwolfssl.ko: wolfssl/Makefile
 	sudo make -C wolfssl
 
+load: wolfssl/linuxkm/libwolfssl.ko compat/linux/aesgcm.ko
+	@if ! [ $(KERNEL_MAJOR) -ge 6 -a $(KERNEL_MINOR) -ge 2 ]; then \
+	    if ! /usr/sbin/lsmod | grep -q gf128mul; then \
+	        echo /usr/sbin/insmod $(KERNELDIR)/../kernel/crypto/gf128mul.ko; \
+	        /usr/sbin/insmod $(KERNELDIR)/../kernel/crypto/gf128mul.ko; \
+	    fi; \
+	    if ! /usr/sbin/lsmod | grep -q aesgcm; then \
+		echo /usr/sbin/insmod compat/linux/aesgcm.ko; \
+		/usr/sbin/insmod compat/linux/aesgcm.ko; \
+	    fi; \
+	fi
+	@if ! /usr/sbin/lsmod | grep -q libwolfssl; then \
+		echo /usr/sbin/insmod wolfssl/linuxkm/libwolfssl.ko; \
+		/usr/sbin/insmod wolfssl/linuxkm/libwolfssl.ko; \
+	fi
+	/usr/sbin/insmod kquic.ko
 
-.PHONY: all debug module module-debug clean install test
+unload:
+	/usr/sbin/rmmod kquic.ko
+
+reload: | unload load
+
+.PHONY: all debug module module-debug clean install test load unload reload
