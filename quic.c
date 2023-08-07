@@ -44,6 +44,8 @@ struct udp_table quic_table __read_mostly;
 int	quic_rcv(struct sk_buff *);
 int	quic_err(struct sk_buff *, u32);
 
+int	quic_sendmsg(struct sock *, struct msghdr *, size_t);
+
 static const struct net_protocol quic_protocol = {
 	.handler =	quic_rcv,
 	.err_handler =	quic_err,
@@ -103,6 +105,7 @@ int quic_v4_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 	struct quic_sock *qp = quic_sk(sk);
 	ngtcp2_settings settings;
 	ngtcp2_transport_params params;
+	struct msghdr msg;
 	uint8_t *buf;
 	ssize_t dlen;
 	int ret;
@@ -139,6 +142,10 @@ int quic_v4_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 			dlen);
 		return -1;
 	}
+
+	msg.msg_name = uaddr;
+	msg.msg_namelen = addr_len;
+	ret = quic_sendmsg(sk, &msg, dlen);
 	return ret;
 }
 
