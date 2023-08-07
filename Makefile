@@ -22,16 +22,12 @@ authors.h:
 		echo "MODULE_AUTHOR(\"$$a\");" >> $@; \
 	done
 
-module: authors.h
-	@if ! [ $(KERNEL_MAJOR) -ge 6 -a $(KERNEL_MINOR) -ge 2 ]; then \
-	    $(MAKE) -C $(KERNELDIR) M=$(PWD)/compat/linux modules; \
-	fi
+module: kquic.ko
+
+kquic.ko: authors.h compat/linux/aesgcm.ko
 	@$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
 
 module-debug:
-	@if ! [ $(KERNEL_MAJOR) -ge 6 -a $(KERNEL_MINOR) -ge 2 ]; then \
-	    $(MAKE) -C $(KERNELDIR) M=$(PWD)/compat/linux modules; \
-	fi
 	@$(MAKE) -C $(KERNELDIR) M=$(PWD) CONFIG_INET_QUIC_DEBUG=y modules
 
 clean:
@@ -48,6 +44,13 @@ install:
 
 test:
 	@$(MAKE) -C tests
+
+compat/linux/aesgcm.ko:
+	@if ! [ $(KERNEL_MAJOR) -ge 6 -a $(KERNEL_MINOR) -ge 2 ]; then \
+	    $(MAKE) -C $(KERNELDIR) M=$(PWD)/compat/linux modules; \
+	else \
+		touch compat/linux/aesgcm.ko; \
+	fi
 
 wolfssl:
 	git clone --depth 1 -b $(WOLFSSL_VERSION) $(WOLFSSL_REPO)
