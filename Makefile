@@ -10,6 +10,9 @@ DEPMOD ?= depmod
 PWD := $(shell pwd)
 NGTCP2_FILES = quic.c ngtcp2/
 
+WOLFSSL_REPO = https://github.com/wolfSSL/wolfssl
+WOLFSSL_VERSION = v5.6.3-stable
+
 all: module
 debug: module-debug
 
@@ -45,5 +48,20 @@ install:
 
 test:
 	@$(MAKE) -C tests
+
+wolfssl:
+	git clone --depth 1 -b $(WOLFSSL_VERSION) $(WOLFSSL_REPO)
+
+wolfssl/configure: wolfssl
+	cd wolfssl && autoreconf -i
+
+wolfssl/Makefile: wolfssl/configure
+	cd wolfssl && \
+	./configure --enable-linuxkm --enable-cryptonly --enable-tls13 \
+	    --enable-hkdf --with-linux-source=$(KERNELDIR)
+
+wolfssl/linuxkm/libwolfssl.ko: wolfssl/Makefile
+	sudo make -C wolfssl
+
 
 .PHONY: all debug module module-debug clean install test
