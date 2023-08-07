@@ -103,6 +103,8 @@ int quic_v4_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 	struct quic_sock *qp = quic_sk(sk);
 	ngtcp2_settings settings;
 	ngtcp2_transport_params params;
+	uint8_t *buf;
+	ssize_t dlen;
 	int ret;
 
 	pr_info("%s\n", __func__);
@@ -124,6 +126,19 @@ int quic_v4_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 		return -1;
 	}
 
+	buf = kmalloc(settings.max_tx_udp_payload_size, GFP_KERNEL);
+	if (buf == NULL) {
+		pr_info("%s: kmalloc failed\n", __func__);
+		return -1;
+	}
+
+	dlen = ngtcp2_conn_write_pkt(qp->conn, &(qp->path), NULL, buf,
+		settings.max_tx_udp_payload_size, 0);
+	if (dlen < 0) {
+		pr_info("%s: ngtcp2_conn_write_pkt failed: %ld\n", __func__,
+			dlen);
+		return -1;
+	}
 	return ret;
 }
 
