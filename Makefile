@@ -6,6 +6,7 @@ KERNELRELEASE ?= $(shell uname -r)
 KERNEL_MAJOR ?= $(shell uname -r | cut -d. -f1)
 KERNEL_MINOR ?= $(shell uname -r | cut -d. -f2)
 KERNELDIR ?= /lib/modules/$(KERNELRELEASE)/build
+MODDIR ?= /lib/modules/$(KERNELRELEASE)/kernel
 DEPMOD ?= depmod
 PWD := $(shell pwd)
 NGTCP2_FILES = quic.c ngtcp2/
@@ -24,7 +25,7 @@ authors.h:
 
 module: kquic.ko
 
-kquic.ko: authors.h compat/linux/aesgcm.ko
+kquic.ko: authors.h compat/linux/aesgcm.ko *.c *.h
 	@$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
 
 module-debug:
@@ -55,7 +56,7 @@ compat/linux/aesgcm.ko:
 wolfssl:
 	git clone --depth 1 -b $(WOLFSSL_VERSION) $(WOLFSSL_REPO)
 
-wolfssl/configure: wolfssl
+wolfssl/configure: wolfssl/configure.ac
 	cd wolfssl && autoreconf -i
 
 wolfssl/Makefile: wolfssl/configure
@@ -64,13 +65,13 @@ wolfssl/Makefile: wolfssl/configure
 	    --enable-hkdf --with-linux-source=$(KERNELDIR)
 
 wolfssl/linuxkm/libwolfssl.ko: wolfssl/Makefile
-	sudo make -C wolfssl
+	sudo make -C wolfssl || true
 
 load: wolfssl/linuxkm/libwolfssl.ko compat/linux/aesgcm.ko
 	@if ! [ $(KERNEL_MAJOR) -ge 6 -a $(KERNEL_MINOR) -ge 2 ]; then \
 	    if ! /usr/sbin/lsmod | grep -q gf128mul; then \
-	        echo /usr/sbin/insmod $(KERNELDIR)/../kernel/crypto/gf128mul.ko; \
-	        /usr/sbin/insmod $(KERNELDIR)/../kernel/crypto/gf128mul.ko; \
+	        echo /usr/sbin/insmod $(MODDIR)/crypto/gf128mul.ko; \
+	        /usr/sbin/insmod $(MODDIR)/crypto/gf128mul.ko; \
 	    fi; \
 	    if ! /usr/sbin/lsmod | grep -q aesgcm; then \
 		echo /usr/sbin/insmod compat/linux/aesgcm.ko; \
