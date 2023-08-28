@@ -266,7 +266,7 @@ int quic_v4_get_port(struct sock *sk, unsigned short snum)
 		ipv4_portaddr_hash(sock_net(sk), inet_sk(sk)->inet_rcv_saddr, 0);
 
 	udp_sk(sk)->udp_portaddr_hash = hash2_partial;
-        return udp_lib_get_port(sk, snum, hash2_nulladdr);
+	return udp_lib_get_port(sk, snum, hash2_nulladdr);
 }
 
 int quic_abort(struct sock *sk, int err)
@@ -379,18 +379,18 @@ static int __init quic_init(void)
 	}
 
 	if ((rc = proto_register(&quic_prot, 1)) < 0) {
-		pr_crit("%s: Cannot register QUIC prot\n", __func__);
+		pr_crit("%s: cannot register QUIC prot\n", __func__);
 		return rc;
 	}
 
 	if ((rc = inet_del_protocol(inet_protos[IPPROTO_UDP],
 			IPPROTO_UDP)) < 0) {
-		pr_crit("%s: Cannot remove UDP protocol\n", __func__);
+		pr_crit("%s: cannot remove UDP protocol\n", __func__);
 		return rc;
 	}
 
 	if ((rc = inet_add_protocol(&quic_protocol, IPPROTO_UDP)) < 0) {
-		pr_crit("%s: Cannot add UDP protocol shim\n", __func__);
+		pr_crit("%s: cannot add UDP protocol shim\n", __func__);
 		return rc;
 	}
 
@@ -404,9 +404,9 @@ static void __exit quic_exit(void)
 	proto_unregister(&quic_prot);
 
 	if (inet_del_protocol(inet_protos[IPPROTO_UDP], IPPROTO_UDP) < 0)
-		pr_crit("%s: Cannot remove QUIC protocol\n", __func__);
+		pr_crit("%s: cannot remove QUIC protocol\n", __func__);
 	if (inet_add_protocol(udp_protocol, IPPROTO_UDP) < 0)
-		pr_crit("%s: Cannot add UDP protocol\n", __func__);
+		pr_crit("%s: cannot add UDP protocol\n", __func__);
 
 	inet_unregister_protosw(&quic4_protosw);
 }
