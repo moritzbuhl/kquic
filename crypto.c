@@ -191,7 +191,7 @@ ngtcp2_crypto_ctx *ngtcp2_crypto_ctx_tls_early(ngtcp2_crypto_ctx *ctx,
 	return ngtcp2_crypto_ctx_tls(ctx, tls_native_handle);
 }
 
-int ngtcp2_crypto_read_write_crypto_data( ngtcp2_conn *conn,
+int ngtcp2_crypto_read_write_crypto_data(ngtcp2_conn *conn,
 		ngtcp2_encryption_level encryption_level,
 		const uint8_t *data, size_t datalen) {
 	pr_info("%s\n", __func__);
