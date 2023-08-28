@@ -164,7 +164,7 @@ int ngtcp2_crypto_set_remote_transport_params(ngtcp2_conn *conn, void *tls) {
 
 size_t ngtcp2_crypto_aead_noncelen(const ngtcp2_crypto_aead *aead) {
 	pr_info("%s\n", __func__);
-	return ((struct aesgcm_ctx *)aead->native_handle)->authsize;
+	return GCM_AES_IV_SIZE;
 }
 
 
