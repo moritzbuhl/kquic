@@ -395,6 +395,7 @@ static int __init quic_init(void)
 
 	inet_register_protosw(&quic4_protosw);
 
+	pr_info("kquic " NGTCP2_VERSION " loaded.\n");
 	return 0;
 }
 
@@ -408,6 +409,7 @@ static void __exit quic_exit(void)
 		pr_crit("%s: cannot add UDP protocol\n", __func__);
 
 	inet_unregister_protosw(&quic4_protosw);
+	pr_info("kquic " NGTCP2_VERSION " cleanup complete.\n");
 }
 
 module_init(quic_init);
