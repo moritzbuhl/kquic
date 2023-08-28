@@ -367,9 +367,8 @@ static int __init quic_init(void)
 {
 	int rc;
 
- 	udp_protocol = inet_protos[IPPROTO_UDP];
-	if (!udp_protocol) {
-		pr_crit("%s: Cannot find UDP protocol\n", __func__);
+	if ((udp_protocol = inet_protos[IPPROTO_UDP]) == NULL) {
+		pr_crit("%s: cannot find UDP protocol\n", __func__);
 		return -1;
 	}
 
