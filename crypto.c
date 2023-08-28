@@ -34,6 +34,7 @@
 #include <wolfssl/wolfcrypt/hmac.h>
 
 #include "config.h"
+#include "quic_hs.h"
 #include "ngtcp2/ngtcp2/ngtcp2.h"
 #include "ngtcp2/crypto/shared.h"
 
@@ -195,7 +196,8 @@ int ngtcp2_crypto_read_write_crypto_data(ngtcp2_conn *conn,
 		ngtcp2_encryption_level encryption_level,
 		const uint8_t *data, size_t datalen) {
 	pr_info("%s\n", __func__);
-	return -1;
+	return quic_hs_read_write_crypto_data(conn, encryption_level,
+		data, datalen);
 }
 
 int ngtcp2_crypto_hp_mask(uint8_t *dest, const ngtcp2_crypto_cipher *hp,

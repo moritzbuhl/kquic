@@ -29,6 +29,7 @@
 #include <linux/version.h>
 
 #include <net/sock.h>
+#include <net/genetlink.h>
 #include <net/inet_common.h>
 #include <net/protocol.h>
 #include <net/udp.h>
@@ -38,6 +39,7 @@
 #include "authors.h"
 #include "ngtcp2.h"
 #include "quic.h"
+#include "quic_hs.h"
 
 struct udp_table quic_table __read_mostly;
 
@@ -367,6 +369,11 @@ static int __init quic_init(void)
 {
 	int rc;
 
+	 if ((rc = genl_register_family(&quic_hs_gnl_family)) < 0) {
+		pr_crit("%s: cannot register quic_hs genl family\n", __func__);
+		return -1;
+	}
+
 	if ((udp_protocol = inet_protos[IPPROTO_UDP]) == NULL) {
 		pr_crit("%s: cannot find UDP protocol\n", __func__);
 		return -1;
@@ -401,6 +408,9 @@ static int __init quic_init(void)
 
 static void __exit quic_exit(void)
 {
+	if (genl_unregister_family(&quic_hs_gnl_family) < 0)
+		pr_crit("%s: cannot unregister quic_hs genl\n", __func__);
+
 	proto_unregister(&quic_prot);
 
 	if (inet_del_protocol(inet_protos[IPPROTO_UDP], IPPROTO_UDP) < 0)

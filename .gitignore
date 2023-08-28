@@ -3,6 +3,7 @@ wolfssl/
 
 # Build products
 authors.h
+bin/qked
 
 tests/test-tcp
 tests/test-quic
