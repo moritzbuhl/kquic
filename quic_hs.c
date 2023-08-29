@@ -43,9 +43,6 @@ static int quic_hs_handshake(struct sk_buff *skb, struct genl_info *info)
 	return -1;
 }
 
-static struct nla_policy quic_hs_genl_policy[QUIC_HS_ATTR_MAX + 1] = {
-};
-
 static const struct genl_small_ops quic_hs_gnl_ops[] = {
 	{
 		.cmd = QUIC_HS_CMD_HELLO,
@@ -73,6 +70,8 @@ int quic_hs_read_write_crypto_data(ngtcp2_conn *conn,
 {
 	struct sk_buff *skb;
 	void *hdr;
+	const ngtcp2_cid *dcid;
+	ngtcp2_cid scid;
 
 	pr_info("%s\n", __func__);
 	if (listener_nlportid == 0) {
@@ -81,12 +80,34 @@ int quic_hs_read_write_crypto_data(ngtcp2_conn *conn,
 		return -1;
 	}
 
+	dcid = ngtcp2_conn_get_dcid(conn);
+	ngtcp2_conn_get_scid(conn, &scid);
+
 	if ((skb = genlmsg_new(NLMSG_GOODSIZE, GFP_KERNEL)) == NULL)
 		return -ENOMEM;
 
 	if ((hdr = genlmsg_put(skb, 0, 0, &quic_hs_gnl_family, 0,
 			QUIC_HS_CMD_HANDSHAKE)) == NULL)
 		goto fail;
+
+	if (nla_put(skb, QUIC_HS_ATTR_INIT_DCID, dcid->datalen,
+			dcid->data) != 0)
+		BUG();
+
+	if (nla_put(skb, QUIC_HS_ATTR_INIT_SCID, scid.datalen,
+			scid.data) != 0)
+		BUG();
+
+	if (nla_put_u8(skb, QUIC_HS_ATTR_INIT_ENC_LVL, encryption_level) != 0)
+		BUG();
+
+	if (datalen > 0 && nla_put(skb, QUIC_HS_ATTR_INIT_DATA, datalen,
+			data) != 0)
+		BUG();
+
+	if (ngtcp2_conn_is_server(conn) &&
+			nla_put_flag(skb, QUIC_HS_ATTR_INIT_IS_SERVER) != 0)
+		BUG();
 
 	genlmsg_end(skb, hdr);
 

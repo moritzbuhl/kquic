@@ -72,7 +72,7 @@ ngtcp2_callbacks ngtcp2_cbs = {
 	.version_negotiation = ngtcp2_crypto_version_negotiation_cb,
 	.recv_rx_key = NULL,
 	.recv_tx_key = NULL,
-	.tls_early_data_rejected = NULL,
+	.tls_early_data_rejected = NULL, /* XXX: requires more message exchanges in qked */
 };
 
 #endif /* _NGTCP2_H */

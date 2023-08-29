@@ -34,13 +34,154 @@
 #include <event.h>
 
 #include "../quic_hs.h"
+#include "ngtcp_picotls.h"
+
+/*
+static uint16_t nla_attr_minlen[NLA_TYPE_MAX+1] = {
+        [NLA_U8]        = sizeof(uint8_t),
+        [NLA_U16]       = sizeof(uint16_t),
+        [NLA_U32]       = sizeof(uint32_t),
+        [NLA_U64]       = sizeof(uint64_t),
+        [NLA_STRING]    = 1,
+        [NLA_FLAG]      = 0,
+};
+static int myvalidate_nla(struct nlattr *nla, int maxtype,
+                        struct nla_policy *policy)
+{
+        struct nla_policy *pt;
+        unsigned int minlen = 0;
+        int type = nla_type(nla);
+
+        if (type < 0 || type > maxtype)
+                return 0;
+	warnx("type: %d", type);
+
+        pt = &policy[type];
+
+        if (pt->type > NLA_TYPE_MAX)
+                err(1, NULL);
+
+        if (pt->minlen) {
+                minlen = pt->minlen;
+        } else if (pt->type != NLA_UNSPEC)
+                minlen = nla_attr_minlen[pt->type];
+
+        if (nla_len(nla) < minlen) {
+		warnx("minlen");
+                return -NLE_RANGE;
+	}
+
+        if (pt->maxlen && nla_len(nla) > pt->maxlen) {
+		warnx("maxlen");
+                return -NLE_RANGE;
+	}
+
+        if (pt->type == NLA_STRING) {
+                char *data = nla_data(nla);
+                if (data[nla_len(nla) - 1] != '\0')
+                        return -NLE_INVAL;
+        }
+
+        return 0;
+}
+
+int mynla_parse(struct nlattr *tb[], int maxtype, struct nlattr *head, int len,
+              struct nla_policy *policy)
+{
+        struct nlattr *nla;
+        int rem, err;
+
+        memset(tb, 0, sizeof(struct nlattr *) * (maxtype + 1));
+
+        nla_for_each_attr(nla, head, len, rem) {
+                int type = nla_type(nla);
+	warnx("type: %d", type);
+
+                if (type > maxtype)
+                        continue;
+
+                if (policy) {
+                        err = myvalidate_nla(nla, maxtype, policy);
+                        if (err < 0)
+                                goto errout;
+                }
+
+                if (tb[type])
+                        warnx("Attribute of type %#x found multiple times in message, "
+                                  "previous attribute is being ignored.\n", type);
+
+                tb[type] = nla;
+        }
+
+        if (rem > 0)
+                warnx("netlink: %d bytes leftover after parsing "
+                       "attributes.\n", rem);
+
+        err = 0;
+errout:
+        return err;
+}
+
+int mygenlmsg_parse(struct nlmsghdr *nlh, int hdrlen, struct nlattr *tb[],
+                  int maxtype, struct nla_policy *policy)
+{
+        struct genlmsghdr *ghdr;
+
+        if (!genlmsg_valid_hdr(nlh, hdrlen))
+                return -NLE_MSG_TOOSHORT;
+
+        ghdr = nlmsg_data(nlh);
+        return mynla_parse(tb, maxtype, genlmsg_attrdata(ghdr, hdrlen),
+                         genlmsg_attrlen(ghdr, hdrlen), policy);
+}
+*/
 
 int
 qked_hs_cb(struct nl_msg *msg, void *arg)
 {
-	/* struct nl_sock *ns = arg; */
+	struct nl_sock *ns = arg;
+	struct nlattr *tb[QUIC_HS_ATTR_MAX + 1];
+	struct ngtcp2_cid dcid, scid;
+	size_t datalen = 0;
+	uint8_t lvl, *data = NULL;
+	int rc, is_server;
+
 	warnx("%s", __func__);
-	return NL_SKIP;
+
+	if ((rc = genlmsg_parse(nlmsg_hdr(msg), 0, tb, QUIC_HS_ATTR_MAX,
+	    quic_hs_genl_policy)) != 0) {
+		warnx("%s: nla_parse failed %d", __func__, rc);
+		return NL_STOP;
+	}
+
+	dcid.datalen = nla_len(tb[QUIC_HS_ATTR_INIT_DCID]);
+	if (dcid.datalen > NGTCP2_MAX_CIDLEN)
+		err(1, "dcid too long");
+	memcpy(dcid.data, nla_get_string(tb[QUIC_HS_ATTR_INIT_DCID]),
+		dcid.datalen);
+
+	scid.datalen = nla_len(tb[QUIC_HS_ATTR_INIT_SCID]);
+	if (scid.datalen > NGTCP2_MAX_CIDLEN)
+		err(1, "scid too long");
+	memcpy(scid.data, nla_get_string(tb[QUIC_HS_ATTR_INIT_SCID]),
+		scid.datalen);
+
+	lvl = nla_get_u8(tb[QUIC_HS_ATTR_INIT_ENC_LVL]);
+	if (tb[QUIC_HS_ATTR_INIT_DATA] != NULL) {
+		datalen = nla_len(tb[QUIC_HS_ATTR_INIT_DATA]);
+		if ((data = malloc(datalen)) == NULL)
+			err(1, "malloc");
+		memcpy(data, nla_get_string(tb[QUIC_HS_ATTR_INIT_DATA]),
+			datalen);
+	}
+
+	is_server = (tb[QUIC_HS_ATTR_INIT_IS_SERVER] != NULL);
+
+	warnx("cry(dcid.len=%ld, scid.len=%ld, lvl=%d, datalen=%ld, server=%d)", dcid.datalen, scid.datalen, lvl, datalen, is_server);
+	rc = ptls_read_write_crypto_data(&dcid, &scid, lvl, data, datalen, is_server);
+	warnx("cry return: %d", rc);
+
+	return NL_SKIP; /* XXX */
 }
 
 void

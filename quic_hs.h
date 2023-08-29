@@ -28,6 +28,17 @@
 
 enum {
 	QUIC_HS_ATTR_UNSPEC,
+	QUIC_HS_ATTR_INIT_DCID,
+	QUIC_HS_ATTR_INIT_SCID,
+	QUIC_HS_ATTR_INIT_ENC_LVL,
+	QUIC_HS_ATTR_INIT_DATA,
+	QUIC_HS_ATTR_INIT_IS_SERVER,
+	QUIC_HS_ATTR_REPLY_ALERT,	/* TLS alert */
+	QUIC_HS_ATTR_REPLY_EDR,		/* TLS early data rejected */
+	QUIC_HS_ATTR_REPLY_CD_0,	/* crypto data epoch 0 */
+	QUIC_HS_ATTR_REPLY_CD_1,
+	QUIC_HS_ATTR_REPLY_CD_2,
+	QUIC_HS_ATTR_REPLY_CD_3,
 	__QUIC_HS_ATTR_MAX,
 };
 #define QUIC_HS_ATTR_MAX (__QUIC_HS_ATTR_MAX - 1)
@@ -39,6 +50,21 @@ enum {
 	__QUIC_HS_CMD_MAX,
 };
 #define QUIC_HS_CMD_MAX (__QUIC_HS_CMD_MAX - 1)
+
+#ifdef __LINUX_GENERIC_NETLINK_H
+static struct nla_policy quic_hs_genl_policy[QUIC_HS_ATTR_MAX + 1] = {
+	[QUIC_HS_ATTR_INIT_DCID]	= { .type = NLA_BINARY }, /* XXX: MAX_LEN */
+	[QUIC_HS_ATTR_INIT_SCID]	= { .type = NLA_BINARY }, /* SAME */
+	[QUIC_HS_ATTR_INIT_ENC_LVL]	= { .type = NLA_U8 },
+	[QUIC_HS_ATTR_INIT_DATA]	= { .type = NLA_BINARY },
+	[QUIC_HS_ATTR_REPLY_ALERT]	= { .type = NLA_U8 },
+	[QUIC_HS_ATTR_REPLY_EDR]	= { .type = NLA_FLAG },
+	[QUIC_HS_ATTR_REPLY_CD_0]	= { .type = NLA_BINARY },
+	[QUIC_HS_ATTR_REPLY_CD_1]	= { .type = NLA_BINARY },
+	[QUIC_HS_ATTR_REPLY_CD_2]	= { .type = NLA_BINARY },
+	[QUIC_HS_ATTR_REPLY_CD_3]	= { .type = NLA_BINARY },
+};
+#endif /* __LINUX_GENERIC_NETLINK_H */
 
 extern struct genl_family quic_hs_gnl_family;
 

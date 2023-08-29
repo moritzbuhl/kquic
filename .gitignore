@@ -1,5 +1,6 @@
 # Dependencies
 wolfssl/
+bin/picotls/
 
 # Build products
 authors.h
