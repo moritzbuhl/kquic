@@ -53,7 +53,7 @@ compat/linux/aesgcm.ko:
 		touch compat/linux/aesgcm.ko; \
 	fi
 
-wolfssl:
+wolfssl/configure.ac:
 	git clone --depth 1 -b $(WOLFSSL_VERSION) $(WOLFSSL_REPO)
 
 wolfssl/configure: wolfssl/configure.ac
