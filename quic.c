@@ -108,6 +108,7 @@ int quic_v4_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 	ngtcp2_settings settings;
 	ngtcp2_transport_params params;
 	struct msghdr msg;
+	struct kvec vec;
 	uint8_t *buf;
 	ssize_t dlen;
 	int ret;
@@ -143,10 +144,16 @@ int quic_v4_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 		pr_info("%s: ngtcp2_conn_write_pkt failed: %ld\n", __func__,
 			dlen);
 		return -1;
-	}
+	} else
+		pr_info("%s: ngtcp2_conn_write_pkt dlen: %ld\n", __func__,
+			dlen);
 
+	vec.iov_base = buf;
+	vec.iov_len = dlen;
 	msg.msg_name = uaddr;
 	msg.msg_namelen = addr_len;
+	msg.msg_namelen = addr_len;
+	iov_iter_kvec(&msg.msg_iter, READ, &vec, 1, dlen);
 	ret = quic_sendmsg(sk, &msg, dlen);
 	return ret;
 }
@@ -369,7 +376,7 @@ static int __init quic_init(void)
 {
 	int rc;
 
-	 if ((rc = genl_register_family(&quic_hs_gnl_family)) < 0) {
+	if ((rc = genl_register_family(&quic_hs_gnl_family)) < 0) {
 		pr_crit("%s: cannot register quic_hs genl family\n", __func__);
 		return -1;
 	}

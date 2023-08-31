@@ -25,7 +25,7 @@ authors.h:
 
 module: kquic.ko
 
-kquic.ko: authors.h compat/linux/aesgcm.ko *.c *.h
+kquic.ko: authors.h compat/linux/aesgcm.ko *.c *.h ngtcp2/*.c
 	@$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
 
 module-debug:

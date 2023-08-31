@@ -136,15 +136,57 @@ int mygenlmsg_parse(struct nlmsghdr *nlh, int hdrlen, struct nlattr *tb[],
 }
 */
 
+void
+qked_set_tls_alert(struct nl_msg *msg, uint8_t alert)
+{
+	nla_put_u8(msg, QUIC_HS_ATTR_REPLY_ALERT, alert);
+}
+
+int
+qked_tls_early_data_rejected(struct nl_msg *msg)
+{
+	nla_put_flag(msg, QUIC_HS_ATTR_REPLY_EDR);
+	return 0;
+}
+
+int
+qked_attr_from_epoch(int epoch)
+{
+	switch (epoch) {
+	case 0: return QUIC_HS_ATTR_REPLY_CD_0;
+	case 1: return QUIC_HS_ATTR_REPLY_CD_1;
+	case 2: return QUIC_HS_ATTR_REPLY_CD_2;
+	case 3: return QUIC_HS_ATTR_REPLY_CD_3;
+	default: errx(1, "wrong epoch");
+	}
+}
+
+int
+qked_submit_crypto_data(struct nl_msg * msg, uint8_t epoch, uint8_t *data,
+	size_t datalen)
+{
+	warnx("%s: epoch=%hd datalen=%ld", __func__, epoch, datalen);
+	nla_put(msg, qked_attr_from_epoch(epoch), datalen, data);
+	return 0;
+}
+
+void
+qked_tls_handshake_completed(struct nl_msg *msg)
+{
+	nla_put_flag(msg, QUIC_HS_ATTR_REPLY_HS_FIN);
+}
+
+
 int
 qked_hs_cb(struct nl_msg *msg, void *arg)
 {
 	struct nl_sock *ns = arg;
 	struct nlattr *tb[QUIC_HS_ATTR_MAX + 1];
+	struct nl_msg *res;
 	struct ngtcp2_cid dcid, scid;
 	size_t datalen = 0;
 	uint8_t lvl, *data = NULL;
-	int rc, is_server;
+	int id, rc, is_server;
 
 	warnx("%s", __func__);
 
@@ -157,13 +199,13 @@ qked_hs_cb(struct nl_msg *msg, void *arg)
 	dcid.datalen = nla_len(tb[QUIC_HS_ATTR_INIT_DCID]);
 	if (dcid.datalen > NGTCP2_MAX_CIDLEN)
 		err(1, "dcid too long");
-	memcpy(dcid.data, nla_get_string(tb[QUIC_HS_ATTR_INIT_DCID]),
+	memcpy(dcid.data, nla_get_string(tb[QUIC_HS_ATTR_INIT_DCID]), /* XXX: nla_memcpy */
 		dcid.datalen);
 
 	scid.datalen = nla_len(tb[QUIC_HS_ATTR_INIT_SCID]);
 	if (scid.datalen > NGTCP2_MAX_CIDLEN)
 		err(1, "scid too long");
-	memcpy(scid.data, nla_get_string(tb[QUIC_HS_ATTR_INIT_SCID]),
+	memcpy(scid.data, nla_get_string(tb[QUIC_HS_ATTR_INIT_SCID]), /* XXX: nla_memcpy */
 		scid.datalen);
 
 	lvl = nla_get_u8(tb[QUIC_HS_ATTR_INIT_ENC_LVL]);
@@ -172,14 +214,28 @@ qked_hs_cb(struct nl_msg *msg, void *arg)
 		if ((data = malloc(datalen)) == NULL)
 			err(1, "malloc");
 		memcpy(data, nla_get_string(tb[QUIC_HS_ATTR_INIT_DATA]),
-			datalen);
+			datalen); /* XXX: nla_memcpy */
 	}
 
 	is_server = (tb[QUIC_HS_ATTR_INIT_IS_SERVER] != NULL);
 
-	warnx("cry(dcid.len=%ld, scid.len=%ld, lvl=%d, datalen=%ld, server=%d)", dcid.datalen, scid.datalen, lvl, datalen, is_server);
-	rc = ptls_read_write_crypto_data(&dcid, &scid, lvl, data, datalen, is_server);
-	warnx("cry return: %d", rc);
+	if ((id = genl_ctrl_resolve(ns, "QUIC_HS")) < 0)
+		errx(1, "cannot resolve QUIC_HS Netlink protocol");
+
+	if ((res = nlmsg_alloc()) == NULL)
+		errx(1, "nlmsg_alloc");
+
+	if (genlmsg_put(res, NL_AUTO_PORT, NL_AUTO_SEQ, id, 0, 0,
+	    QUIC_HS_CMD_HANDSHAKE, 0) == NULL)
+		errx(1, "genlmsg_put");
+
+	rc = ptls_read_write_crypto_data(res, &dcid, &scid, lvl, data, datalen,
+		is_server);
+
+	nla_put_s32(res, QUIC_HS_ATTR_REPLY_RC, rc);
+
+	if (nl_send_auto(ns, res) < 0)
+		errx(1, "nl_send_auto");
 
 	return NL_SKIP; /* XXX */
 }

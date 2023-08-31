@@ -31,6 +31,10 @@
 #include <crypto/aead.h>
 #include <crypto/gcm.h>
 
+#include <crypto/skcipher.h>
+
+#include <linux/scatterlist.h>
+
 #include <wolfssl/wolfcrypt/hmac.h>
 
 #include "config.h"
@@ -116,7 +120,7 @@ int ngtcp2_crypto_decrypt(uint8_t *dest, const ngtcp2_crypto_aead *aead,
 	pr_info("%s\n", __func__);
 
 	if (!aesgcm_decrypt(aead_ctx->native_handle, dest, ciphertext,
-                    ciphertextlen, aad, aadlen, nonce, auth_tag))
+			ciphertextlen, aad, aadlen, nonce, auth_tag))
 		return -1;
 	return 0;
 }
@@ -130,7 +134,7 @@ int ngtcp2_crypto_encrypt(uint8_t *dest, const ngtcp2_crypto_aead *aead,
 	pr_info("%s\n", __func__);
 
 	aesgcm_encrypt(aead_ctx->native_handle, dest, plaintext,
-                    plaintextlen, aad, aadlen, nonce, auth_dest);
+		plaintextlen, aad, aadlen, nonce, auth_dest);
 	return 0;
 }
 
@@ -171,13 +175,19 @@ size_t ngtcp2_crypto_aead_noncelen(const ngtcp2_crypto_aead *aead) {
 
 ngtcp2_crypto_ctx *ngtcp2_crypto_ctx_initial(ngtcp2_crypto_ctx *ctx) {
 	pr_info("%s\n", __func__);
-	return NULL;
+	ngtcp2_crypto_aead_init(&ctx->aead, NULL);
+	ctx->max_encryption = 0;
+	ctx->max_decryption_failure = 0;
+	return ctx;
 }
 
 ngtcp2_crypto_ctx *ngtcp2_crypto_ctx_tls(ngtcp2_crypto_ctx *ctx,
 		void *tls_native_handle) {
 	pr_info("%s\n", __func__);
-	return NULL;
+	ctx->max_encryption = NGTCP2_CRYPTO_MAX_ENCRYPTION_AES_GCM;
+	ctx->max_decryption_failure =
+		NGTCP2_CRYPTO_MAX_DECRYPTION_FAILURE_AES_GCM;
+	return ctx;
 }
  
 size_t ngtcp2_crypto_aead_keylen(const ngtcp2_crypto_aead *aead) {
@@ -202,7 +212,28 @@ int ngtcp2_crypto_read_write_crypto_data(ngtcp2_conn *conn,
 
 int ngtcp2_crypto_hp_mask(uint8_t *dest, const ngtcp2_crypto_cipher *hp,
 		const ngtcp2_crypto_cipher_ctx *hp_ctx, const uint8_t *sample) {
+	struct crypto_skcipher *tfm = hp_ctx->native_handle;
+	struct skcipher_request *req;
+	struct scatterlist in, out;
+	DECLARE_CRYPTO_WAIT(wait);
+
 	pr_info("%s\n", __func__);
+
+	if ((req = skcipher_request_alloc(tfm, GFP_KERNEL)) == NULL)
+		return -ENOMEM;
+
+	sg_init_one(&in, sample, 5);
+	sg_init_one(&out, dest, 5);
+	skcipher_request_set_callback(req, CRYPTO_TFM_REQ_MAY_BACKLOG |
+		CRYPTO_TFM_REQ_MAY_SLEEP, crypto_req_done, &wait);
+	skcipher_request_set_crypt(req, &in, &out, 5, NULL);
+	
+	int err;
+	if ((err = crypto_wait_req(crypto_skcipher_encrypt(req), &wait)) != 0) {
+		pr_err("%s: error encrypting data %d\n", __func__, err);
+		return 0; // XXXXXXXXXXXXXX
+	}
+
 	return 0;
 }
 
@@ -221,7 +252,24 @@ int ngtcp2_crypto_get_path_challenge_data_cb(ngtcp2_conn *conn, uint8_t *data,
 
 int ngtcp2_crypto_cipher_ctx_encrypt_init(ngtcp2_crypto_cipher_ctx *cipher_ctx,
 		const ngtcp2_crypto_cipher *cipher, const uint8_t *key) {
+	struct crypto_skcipher *tfm;
+	int err;
+
 	pr_info("%s\n", __func__);
+
+	tfm = crypto_alloc_skcipher("ecb(aes)", 0, 0);
+	if (IS_ERR(tfm)) {
+		pr_err("%s: error allocating ecb(aes) handle\n", __func__);
+		return -1;
+	}
+
+	err = crypto_skcipher_setkey(tfm, key, AES_KEYSIZE_128);
+	if (err) {
+		pr_err("%s: error setting key\n", __func__);
+		return -1;
+	}
+
+	cipher_ctx->native_handle = tfm;
 	return 0;
 }
 

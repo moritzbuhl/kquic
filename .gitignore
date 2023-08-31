@@ -62,4 +62,5 @@ Module.symvers
 Mkfile.old
 dkms.conf
 .cache.mk
+*.swo
 *.swp

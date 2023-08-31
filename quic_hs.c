@@ -28,6 +28,9 @@
 #include "ngtcp2/ngtcp2/ngtcp2.h"
 #include "quic_hs.h"
 
+DEFINE_MUTEX(handshake_lock);
+DECLARE_COMPLETION(handshake_reply);
+static struct nlattr *reply[QUIC_HS_ATTR_MAX + 1];
 static uint32_t listener_nlportid;
 
 static int quic_hs_hello(struct sk_buff *skb, struct genl_info *info)
@@ -39,8 +42,29 @@ static int quic_hs_hello(struct sk_buff *skb, struct genl_info *info)
 
 static int quic_hs_handshake(struct sk_buff *skb, struct genl_info *info)
 {
+	struct nlmsghdr *nlh = nlmsg_hdr(skb);
+
 	pr_info("%s\n", __func__);
-	return -1;
+
+        if (genlmsg_parse(nlh, &quic_hs_gnl_family, reply, QUIC_HS_ATTR_MAX,
+			quic_hs_genl_policy, NULL) != 0) {
+		pr_warn("%s: parsing response failed.\n", __func__);
+		return -1;
+	}
+
+        if (reply[QUIC_HS_ATTR_REPLY_RC] == NULL) {
+		pr_warn("%s: return code missing.\n", __func__);
+		return -1;
+	}
+
+	/*
+	 * XXX: more verification that the ngtcp2 state machine cannot
+	 * be confused
+	 */
+
+	complete(&handshake_reply);
+
+	return 0;
 }
 
 static const struct genl_small_ops quic_hs_gnl_ops[] = {
@@ -64,14 +88,74 @@ struct genl_family quic_hs_gnl_family = {
 	.n_small_ops	= ARRAY_SIZE(quic_hs_gnl_ops),
 };
 
+int quick_hs_handle_completion(ngtcp2_conn *conn) {
+	int rc;
+
+	pr_info("%s\n", __func__);
+	rc = nla_get_s32(reply[QUIC_HS_ATTR_REPLY_RC]);
+	pr_info("%s rc=%d\n", __func__, rc);
+
+	if (reply[QUIC_HS_ATTR_REPLY_ALERT]) {
+		pr_info("%s alert\n", __func__);
+		ngtcp2_conn_set_tls_alert(conn,
+			nla_get_u8(reply[QUIC_HS_ATTR_REPLY_ALERT]));
+		return -1;
+	}
+
+	if (nla_get_flag(reply[QUIC_HS_ATTR_REPLY_EDR])) {
+		pr_info("%s edr\n", __func__);
+		if (ngtcp2_conn_tls_early_data_rejected(conn) != 0)
+			return -1;
+	}
+
+	if (reply[QUIC_HS_ATTR_REPLY_CD_0]) {
+		pr_info("%s epoch 0, len=%d\n", __func__, nla_len(reply[QUIC_HS_ATTR_REPLY_CD_0]));
+		if (ngtcp2_conn_submit_crypto_data(conn, 0,
+			nla_data(reply[QUIC_HS_ATTR_REPLY_CD_0]),
+			nla_len(reply[QUIC_HS_ATTR_REPLY_CD_0])) != 0)
+				return -1;
+	}
+
+	if (reply[QUIC_HS_ATTR_REPLY_CD_3]) {
+		pr_info("%s epoch 3, len=%d\n", __func__, nla_len(reply[QUIC_HS_ATTR_REPLY_CD_3]));
+		if (ngtcp2_conn_submit_crypto_data(conn, 3,
+			nla_data(reply[QUIC_HS_ATTR_REPLY_CD_3]),
+			nla_len(reply[QUIC_HS_ATTR_REPLY_CD_3])) != 0)
+				return -1;
+	}
+
+	if (reply[QUIC_HS_ATTR_REPLY_CD_1]) {
+		pr_info("%s epoch 1, len=%d\n", __func__, nla_len(reply[QUIC_HS_ATTR_REPLY_CD_1]));
+		if (ngtcp2_conn_submit_crypto_data(conn, 1,
+			nla_data(reply[QUIC_HS_ATTR_REPLY_CD_1]),
+			nla_len(reply[QUIC_HS_ATTR_REPLY_CD_1])) != 0)
+				return -1;
+	}
+
+	if (reply[QUIC_HS_ATTR_REPLY_CD_2]) {
+		pr_info("%s epoch 2, len=%d\n", __func__, nla_len(reply[QUIC_HS_ATTR_REPLY_CD_2]));
+		if (ngtcp2_conn_submit_crypto_data(conn, 2,
+			nla_data(reply[QUIC_HS_ATTR_REPLY_CD_2]),
+			nla_len(reply[QUIC_HS_ATTR_REPLY_CD_2])) != 0)
+				return -1;
+	}
+
+	if (nla_get_flag(reply[QUIC_HS_ATTR_REPLY_HS_FIN])) {
+		pr_info("%s complete\n", __func__);
+		ngtcp2_conn_tls_handshake_completed(conn);
+	}
+
+	return rc;
+}
+
 int quic_hs_read_write_crypto_data(ngtcp2_conn *conn,
 		ngtcp2_encryption_level encryption_level,
-		const uint8_t *data, size_t datalen)
-{
+		const uint8_t *data, size_t datalen) {
 	struct sk_buff *skb;
 	void *hdr;
 	const ngtcp2_cid *dcid;
 	ngtcp2_cid scid;
+	int rc = -EMSGSIZE;
 
 	pr_info("%s\n", __func__);
 	if (listener_nlportid == 0) {
@@ -91,28 +175,53 @@ int quic_hs_read_write_crypto_data(ngtcp2_conn *conn,
 		goto fail;
 
 	if (nla_put(skb, QUIC_HS_ATTR_INIT_DCID, dcid->datalen,
-			dcid->data) != 0)
-		BUG();
+			dcid->data) != 0) {
+		pr_err("%s: nla_put", __func__);
+		goto fail;
+	}
 
 	if (nla_put(skb, QUIC_HS_ATTR_INIT_SCID, scid.datalen,
-			scid.data) != 0)
-		BUG();
+			scid.data) != 0) {
+		pr_err("%s: nla_put", __func__);
+		goto fail;
+	}
 
-	if (nla_put_u8(skb, QUIC_HS_ATTR_INIT_ENC_LVL, encryption_level) != 0)
-		BUG();
+	if (nla_put_u8(skb, QUIC_HS_ATTR_INIT_ENC_LVL,
+			encryption_level) != 0) {
+		pr_err("%s: nla_put", __func__);
+		goto fail;
+	}
 
 	if (datalen > 0 && nla_put(skb, QUIC_HS_ATTR_INIT_DATA, datalen,
-			data) != 0)
-		BUG();
+			data) != 0) {
+		pr_err("%s: nla_put", __func__);
+		goto fail;
+	}
 
-	if (ngtcp2_conn_is_server(conn) &&
-			nla_put_flag(skb, QUIC_HS_ATTR_INIT_IS_SERVER) != 0)
-		BUG();
+	if (ngtcp2_conn_is_server(conn) && nla_put_flag(skb,
+			QUIC_HS_ATTR_INIT_IS_SERVER) != 0) {
+		pr_err("%s: nla_put", __func__);
+		goto fail;
+	}
 
 	genlmsg_end(skb, hdr);
 
-	return genlmsg_unicast(&init_net, skb, listener_nlportid);
- fail:
+	mutex_lock(&handshake_lock);
+	reinit_completion(&handshake_reply);
+	if (genlmsg_unicast(&init_net, skb, listener_nlportid) != 0) {
+		pr_warn("%s: genlmsg_unicast failed\n", __func__);
+		mutex_unlock(&handshake_lock);
+		goto fail;
+	}
+
+	if (wait_for_completion_timeout(&handshake_reply, msecs_to_jiffies(1000)) > 0)
+		rc = quick_hs_handle_completion(conn);
+	else /* XXX: set rc */
+		pr_warn("%s: handshake completion timeout\n", __func__);
+
+	mutex_unlock(&handshake_lock);
+	return rc;
+fail:
 	nlmsg_free(skb);
-	return -EMSGSIZE;
+	return rc;
 }

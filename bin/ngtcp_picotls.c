@@ -191,7 +191,7 @@ ptls_get_ctx(struct ngtcp2_cid *dcid, struct ngtcp2_cid *scid)
 }
 
 int
-ptls_read_write_crypto_data(struct ngtcp2_cid *dcid, struct ngtcp2_cid *scid,
+ptls_read_write_crypto_data(struct nl_msg *msg, struct ngtcp2_cid *dcid, struct ngtcp2_cid *scid,
 	uint8_t encryption_level, const uint8_t *data, size_t datalen,
 	int is_server)
 {
@@ -215,24 +215,23 @@ warnx("post ptls_handle_message");
 
 	if (rv != 0 && rv != PTLS_ERROR_IN_PROGRESS) {
 		if (PTLS_ERROR_GET_CLASS(rv) == PTLS_ERROR_CLASS_SELF_ALERT) {
-			//ngtcp2_conn_set_tls_alert(conn, (uint8_t)PTLS_ERROR_TO_ALERT(rv));
-warnx("We need to call ngtcp2_conn_set_tls_alert in kenel.");
+			qked_set_tls_alert(msg, (uint8_t)PTLS_ERROR_TO_ALERT(rv));
+warnx("We need to call ngtcp2_set_tls_alert in kenel.");
 		}
 
 		rv = -1;
 		goto fin;
 	}
 
-	if (/* !ngtcp2_conn_is_server(conn) && */
+	if (is_server &&
 	    cptls->handshake_properties.client.early_data_acceptance ==
 	    PTLS_EARLY_DATA_REJECTED) {
-warnx("We need to call ngtcp2_conn_tls_early_data_rejected in kenel.");
-		/* rv = -1;
-		rv = ngtcp2_conn_tls_early_data_rejected(conn);
+		rv = -1;
+		rv = qked_tls_early_data_rejected(msg);
 		if (rv != 0) {
 			rv = -1;
 			goto fin;
-		} */
+		}
 	}
 
 	for (i = 0; i < 4; ++i) {
@@ -243,19 +242,16 @@ warnx("We need to call ngtcp2_conn_tls_early_data_rejected in kenel.");
 
 		assert(i != 1);
 
-warnx("We need to call ngtcp2_conn_submit_crypto_data in kenel.");
-		if (/* ngtcp2_conn_submit_crypto_data(conn,
+		if (qked_submit_crypto_data(msg,
 		    ngtcp2_crypto_picotls_from_epoch(i), sendbuf.base +
-		    epoch_offsets[i], epoch_datalen) */ 0 != 0) {
-warnx("submit_crypto_data");
+		    epoch_offsets[i], epoch_datalen) != 0) {
 			rv = -1;
 			goto fin;
 		}
 	}
 
 	if (rv == 0) {
-warnx("ngtcp2_conn_tls_handshake_completed");
-		// ngtcp2_conn_tls_handshake_completed(conn);
+		qked_tls_handshake_completed(msg);
 	}
 
 	rv = 0;
