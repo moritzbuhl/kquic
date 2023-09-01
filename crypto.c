@@ -96,7 +96,7 @@ int ngtcp2_crypto_aead_ctx_decrypt_init(ngtcp2_crypto_aead_ctx *aead_ctx,
 		return -1;
 
 	keylen = ngtcp2_crypto_aead_keylen(aead);
-	if (aesgcm_expandkey(hd, key, keylen, noncelen) != 0)
+	if (aesgcm_expandkey(hd, key, keylen, 16) != 0) // XXX: why is noncelen here and 12?
 		return -1;
 
 	aead_ctx->native_handle = hd;
@@ -131,7 +131,6 @@ int ngtcp2_crypto_encrypt(uint8_t *dest, const ngtcp2_crypto_aead *aead,
 		const uint8_t *nonce, size_t noncelen,
 		const uint8_t *aad, size_t aadlen) {
 	uint8_t *auth_dest = dest + plaintextlen;
-	pr_info("%s\n", __func__);
 
 	aesgcm_encrypt(aead_ctx->native_handle, dest, plaintext,
 		plaintextlen, aad, aadlen, nonce, auth_dest);
@@ -142,7 +141,7 @@ ngtcp2_crypto_aead *ngtcp2_crypto_aead_init(ngtcp2_crypto_aead *aead,
 		void *aead_native_handle) {
 	pr_info("%s\n", __func__);
 	aead->native_handle = aead_native_handle;
-	aead->max_overhead = GCM_AES_IV_SIZE;
+	aead->max_overhead = AES_BLOCK_SIZE;
 	return aead;
 }
 
@@ -193,7 +192,7 @@ ngtcp2_crypto_ctx *ngtcp2_crypto_ctx_tls(ngtcp2_crypto_ctx *ctx,
 size_t ngtcp2_crypto_aead_keylen(const ngtcp2_crypto_aead *aead) {
 	/* only aes_128_gcm */
 	pr_info("%s\n", __func__);
-	return 16;
+	return AES_KEYSIZE_128;
 }
 
 ngtcp2_crypto_ctx *ngtcp2_crypto_ctx_tls_early(ngtcp2_crypto_ctx *ctx,
@@ -215,24 +214,29 @@ int ngtcp2_crypto_hp_mask(uint8_t *dest, const ngtcp2_crypto_cipher *hp,
 	struct crypto_skcipher *tfm = hp_ctx->native_handle;
 	struct skcipher_request *req;
 	struct scatterlist in, out;
+	uint8_t	in_buf[AES_BLOCK_SIZE] = { 0 };
+	uint8_t out_buf[AES_BLOCK_SIZE] = { 0 };
 	DECLARE_CRYPTO_WAIT(wait);
+	int err;
 
 	pr_info("%s\n", __func__);
 
 	if ((req = skcipher_request_alloc(tfm, GFP_KERNEL)) == NULL)
 		return -ENOMEM;
 
-	sg_init_one(&in, sample, 5);
-	sg_init_one(&out, dest, 5);
+	memcpy(in_buf, sample, NGTCP2_HP_SAMPLELEN);
+	sg_init_one(&in, in_buf, AES_BLOCK_SIZE);
+	sg_init_one(&out, out_buf, AES_BLOCK_SIZE);
 	skcipher_request_set_callback(req, CRYPTO_TFM_REQ_MAY_BACKLOG |
 		CRYPTO_TFM_REQ_MAY_SLEEP, crypto_req_done, &wait);
-	skcipher_request_set_crypt(req, &in, &out, 5, NULL);
+	skcipher_request_set_crypt(req, &in, &out, AES_BLOCK_SIZE, NULL);
 	
-	int err;
 	if ((err = crypto_wait_req(crypto_skcipher_encrypt(req), &wait)) != 0) {
 		pr_err("%s: error encrypting data %d\n", __func__, err);
-		return 0; // XXXXXXXXXXXXXX
+		return -1;
 	}
+	memcpy(dest, out_buf, NGTCP2_HP_SAMPLELEN);
+pr_info("%02hhX%02hhX%02hhX%02hhX%02hhX", dest[0],dest[1],dest[2],dest[3],dest[4]);
 
 	return 0;
 }

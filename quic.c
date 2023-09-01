@@ -61,7 +61,23 @@ const struct net_protocol *udp_protocol;
 
 static int quic_rcv_skb(struct sock *sk, struct sk_buff *skb)
 {
-	/* XXX: process QUIC protocol */
+	struct quic_sock *qp = quic_sk(sk);
+	uint8_t data[NGTCP2_MAX_UDP_PAYLOAD_SIZE];
+	unsigned int ulen;
+	int ret;
+	__wsum csum;
+
+
+	ulen = udp_skb_len(skb);
+	pr_info("%s: ulen=%u\n", __func__, ulen);
+	if (ulen > NGTCP2_MAX_UDP_PAYLOAD_SIZE)
+		ulen = NGTCP2_MAX_UDP_PAYLOAD_SIZE;
+	pr_info("%s: ulen=%u\n", __func__, ulen);
+	csum = skb_copy_and_csum_bits(skb, 0, data, ulen);
+	ret = ngtcp2_conn_read_pkt(qp->conn, &(qp->path), NULL, 
+		data, ulen, ktime_get_real_ns());
+	pr_info("%s: ret=%d\n", __func__, ret);
+
 	return __udp_enqueue_schedule_skb(sk, skb);
 }
 
@@ -152,9 +168,8 @@ int quic_v4_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 	vec.iov_len = dlen;
 	msg.msg_name = uaddr;
 	msg.msg_namelen = addr_len;
-	msg.msg_namelen = addr_len;
 	iov_iter_kvec(&msg.msg_iter, READ, &vec, 1, dlen);
-	ret = quic_sendmsg(sk, &msg, dlen);
+	ret = udp_prot.sendmsg(sk, &msg, dlen);
 	return ret;
 }
 
