@@ -184,8 +184,8 @@ qked_hs_cb(struct nl_msg *msg, void *arg)
 	struct nlattr *tb[QUIC_HS_ATTR_MAX + 1];
 	struct nl_msg *res;
 	struct ngtcp2_cid dcid, scid;
-	size_t datalen = 0;
-	uint8_t lvl, *data = NULL;
+	size_t tx_datalen = 0, datalen = 0;
+	uint8_t lvl, *data = NULL, *tx_data = NULL;
 	int id, rc, is_server;
 
 	warnx("%s", __func__);
@@ -217,6 +217,16 @@ qked_hs_cb(struct nl_msg *msg, void *arg)
 			datalen); /* XXX: nla_memcpy */
 	}
 
+	if (tb[QUIC_HS_ATTR_INIT_TX_PARAMS] != NULL) {
+		tx_datalen = nla_len(tb[QUIC_HS_ATTR_INIT_TX_PARAMS]);
+		if (tx_datalen > 256)
+			err(1, "tx_data too large");
+		if ((tx_data = malloc(256)) == NULL)
+			err(1, "malloc");
+		memcpy(tx_data, nla_get_string(tb[QUIC_HS_ATTR_INIT_TX_PARAMS]),
+			tx_datalen); /* XXX: nla_memcpy */
+	}
+
 	is_server = (tb[QUIC_HS_ATTR_INIT_IS_SERVER] != NULL);
 
 	if ((id = genl_ctrl_resolve(ns, "QUIC_HS")) < 0)
@@ -226,16 +236,18 @@ qked_hs_cb(struct nl_msg *msg, void *arg)
 		errx(1, "nlmsg_alloc");
 
 	if (genlmsg_put(res, NL_AUTO_PORT, NL_AUTO_SEQ, id, 0, 0,
-	    QUIC_HS_CMD_HANDSHAKE, 0) == NULL)
+	    QUIC_HS_CMD_HANDSHAKE, 0) == NULL) /* XXX: split msgs, CMD_HS_REPLY */
 		errx(1, "genlmsg_put");
 
 	rc = ptls_read_write_crypto_data(res, &dcid, &scid, lvl, data, datalen,
-		is_server);
+		tx_data, tx_datalen, is_server);
 
 	nla_put_s32(res, QUIC_HS_ATTR_REPLY_RC, rc);
 
 	if (nl_send_auto(ns, res) < 0)
 		errx(1, "nl_send_auto");
+
+	/* XXX free() */
 
 	return NL_SKIP; /* XXX */
 }
@@ -296,6 +308,7 @@ qked_nl_init(void)
 }
 
 
+/*
 #include <picotls.h>
 #include <picotls/openssl.h>
 void
@@ -309,9 +322,9 @@ printf("key= %02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%
 key[0],key[1],key[2],key[3],key[4],key[5],key[6],key[7],key[8],key[9],key[10],key[11],key[12],key[13],key[14],key[15]);
 printf("sample= %02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX\n",
 sample[0],sample[1],sample[2],sample[3],sample[4],sample[5],sample[6],sample[7],sample[8],sample[9],sample[10],sample[11],sample[12],sample[13],sample[14],sample[15]);
-	
+
 	ptls_cipher_context_t *actx;
-	  actx = ptls_cipher_new(&ptls_openssl_aes128ctr, /* is_enc = */ 1, key);
+	  actx = ptls_cipher_new(&ptls_openssl_aes128ctr, 1, key);
 	  ptls_cipher_init(actx, sample);
 
 	  static const uint8_t PLAINTEXT[] = "\x00\x00\x00\x00\x00";
@@ -322,9 +335,10 @@ dest[0],dest[1],dest[2],dest[3],dest[4],dest[5],dest[6],dest[7],dest[8],dest[9],
 	printf("kernel= 0A84310BA5600F2FACADABAAA8C75230\n");
 	printf("out_buf=%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX\n",
 out_buf[0],out_buf[1],out_buf[2],out_buf[3],out_buf[4],out_buf[5],out_buf[6],out_buf[7],out_buf[8],out_buf[9],out_buf[10],out_buf[11],out_buf[12],out_buf[13],out_buf[14],out_buf[15]);
-	
+
 	exit(0);
 }
+*/
 
 int
 main(int argc, char *argv[])
@@ -332,7 +346,6 @@ main(int argc, char *argv[])
 	struct nl_sock *ns;
 	struct event ev;
 	int s;
-//	hp();
 
 	ns = qked_nl_init();
 	qked_send_hello(ns);

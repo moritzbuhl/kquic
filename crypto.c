@@ -182,7 +182,13 @@ ngtcp2_crypto_ctx *ngtcp2_crypto_ctx_initial(ngtcp2_crypto_ctx *ctx) {
 
 ngtcp2_crypto_ctx *ngtcp2_crypto_ctx_tls(ngtcp2_crypto_ctx *ctx,
 		void *tls_native_handle) {
+	uint8_t *hd;
+
 	pr_info("%s\n", __func__);
+	if (tls_native_handle == NULL &&
+			(hd = kmalloc(256, GFP_KERNEL)) == NULL)
+		return NULL;
+
 	ctx->max_encryption = NGTCP2_CRYPTO_MAX_ENCRYPTION_AES_GCM;
 	ctx->max_decryption_failure =
 		NGTCP2_CRYPTO_MAX_DECRYPTION_FAILURE_AES_GCM;
@@ -279,7 +285,11 @@ int ngtcp2_crypto_cipher_ctx_encrypt_init(ngtcp2_crypto_cipher_ctx *cipher_ctx,
 
 int ngtcp2_crypto_set_local_transport_params(void *tls, const uint8_t *buf,
 		size_t len) {
+	struct quic_hs_tx_params *hd = tls;
+
 	pr_info("%s\n", __func__);
+	hd->len = len;
+	memcpy(&(hd->buf), buf, len);
 	return 0;
 }
 

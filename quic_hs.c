@@ -145,6 +145,15 @@ int quick_hs_handle_completion(ngtcp2_conn *conn) {
 		ngtcp2_conn_tls_handshake_completed(conn);
 	}
 
+/* XXXXXX
+	rc = ngtcp2_conn_decode_and_set_remote_transport_params(
+		conn, extensions->data.base, extensions->data.len);
+	if (rv != 0) {
+		ngtcp2_conn_set_tls_error(conn, rc);
+		return -1;
+	}
+*/
+
 	return rc;
 }
 
@@ -154,6 +163,7 @@ int quic_hs_read_write_crypto_data(ngtcp2_conn *conn,
 	struct sk_buff *skb;
 	void *hdr;
 	const ngtcp2_cid *dcid;
+	struct quic_hs_tx_params *tx;
 	ngtcp2_cid scid;
 	int rc = -EMSGSIZE;
 
@@ -174,6 +184,7 @@ int quic_hs_read_write_crypto_data(ngtcp2_conn *conn,
 			QUIC_HS_CMD_HANDSHAKE)) == NULL)
 		goto fail;
 
+	/* XXX: dcid is just a random nonce */
 	if (nla_put(skb, QUIC_HS_ATTR_INIT_DCID, dcid->datalen,
 			dcid->data) != 0) {
 		pr_err("%s: nla_put", __func__);
@@ -200,6 +211,13 @@ int quic_hs_read_write_crypto_data(ngtcp2_conn *conn,
 
 	if (ngtcp2_conn_is_server(conn) && nla_put_flag(skb,
 			QUIC_HS_ATTR_INIT_IS_SERVER) != 0) {
+		pr_err("%s: nla_put", __func__);
+		goto fail;
+	}
+
+	tx = ngtcp2_conn_get_tls_native_handle(conn);
+	if (nla_put(skb, QUIC_HS_ATTR_INIT_TX_PARAMS, tx->len,
+			tx->buf) != 0) {
 		pr_err("%s: nla_put", __func__);
 		goto fail;
 	}

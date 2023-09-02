@@ -36,6 +36,8 @@
 
 #define MINIMUM(a,b)	(((a)<(b))?(a):(b))
 
+#define NGTCP2_TLSEXT_QUIC_TRANSPORT_PARAMETERS_V1 0x39u
+
 enum ngtcp2_encryption_level {
 	NGTCP2_ENCRYPTION_LEVEL_INITIAL,
 	NGTCP2_ENCRYPTION_LEVEL_HANDSHAKE,
@@ -50,6 +52,90 @@ struct ptls_ctx {
 	RB_ENTRY(ptls_ctx)		 ctx_node;
 	struct ngtcp2_cid		 dcid, scid;
 };
+
+static int
+set_additional_extensions(ptls_handshake_properties_t *hsprops,
+	uint8_t *buf, size_t nwrite)
+{
+	ptls_raw_extension_t *exts;
+
+	warnx("%s", __func__);
+
+	if ((exts = malloc(sizeof(ptls_raw_extension_t) * 2)) == NULL)
+		err(1, "malloc");
+	exts[1].type = UINT16_MAX;
+	hsprops->additional_extensions = exts;
+
+	exts[0].type = NGTCP2_TLSEXT_QUIC_TRANSPORT_PARAMETERS_V1;
+	exts[0].data.base = buf;
+	exts[0].data.len = nwrite;
+
+	return 0;
+}
+
+int
+ngtcp2_crypto_picotls_collect_extension(ptls_t *ptls,
+	struct st_ptls_handshake_properties_t *properties, uint16_t type)
+{
+	warnx("%s", __func__);
+	return type == NGTCP2_TLSEXT_QUIC_TRANSPORT_PARAMETERS_V1;
+}
+
+int
+ngtcp2_crypto_picotls_collected_extensions(ptls_t *ptls,
+	struct st_ptls_handshake_properties_t *properties,
+	ptls_raw_extension_t *extensions)
+{
+	warnx("%s", __func__);
+
+	for (; extensions->type != UINT16_MAX; ++extensions) {
+		if (extensions->type !=
+		    NGTCP2_TLSEXT_QUIC_TRANSPORT_PARAMETERS_V1)
+			continue;
+warnx("%s: need ngtcp2_conn_decode_and_set_remote_transport_params", __func__);
+/* XXXXXXXXXXXXXXXXX
+ * write msg with flags to call the following (at right order!)
+ * on kernel side.
+
+		rv = ngtcp2_conn_decode_and_set_remote_transport_params(
+			conn, extensions->data.base, extensions->data.len);
+		if (rv != 0) {
+			ngtcp2_conn_set_tls_error(conn, rv);
+			return -1;
+		}
+
+		return 0;
+	}
+*/
+	}
+
+	return 0;
+}
+
+int
+ngtcp2_crypto_picotls_configure_client_session(struct ptls_ctx *cptls,
+	uint8_t *tx_data, size_t tx_datalen)
+{
+	ptls_handshake_properties_t *hsprops = &cptls->handshake_properties;
+
+	warnx("%s", __func__);
+
+	hsprops->client.max_early_data_size = calloc(1, sizeof(uint32_t));
+	if (hsprops->client.max_early_data_size == NULL) {
+		return -1;
+	}
+
+	if (set_additional_extensions(hsprops, tx_data, tx_datalen) != 0) {
+		free(hsprops->client.max_early_data_size);
+		hsprops->client.max_early_data_size = NULL;
+		return -1;
+	}
+
+	hsprops->collect_extension = ngtcp2_crypto_picotls_collect_extension;
+	hsprops->collected_extensions = ngtcp2_crypto_picotls_collected_extensions;
+
+	return 0;
+}
 
 static int
 ptls_ctx_cmp(struct ptls_ctx *a, struct ptls_ctx *b)
@@ -108,6 +194,7 @@ static int
 update_traffic_key_cb(ptls_update_traffic_key_t *self, ptls_t *ptls,
 	int is_enc, size_t epoch, const void *secret)
 {
+	warnx("%s !!!!", __func__);
 /*
 	ngtcp2_crypto_conn_ref *conn_ref = *ptls_get_data_ptr(ptls);
 	ngtcp2_conn *conn = conn_ref->get_conn(conn_ref);
@@ -136,19 +223,19 @@ update_traffic_key_cb(ptls_update_traffic_key_t *self, ptls_t *ptls,
 
 static ptls_update_traffic_key_t update_traffic_key = {update_traffic_key_cb};
 
-ptls_key_exchange_algorithm_t *key_exchanges[] = {
-    &ptls_openssl_x25519,
-    &ptls_openssl_secp256r1,
-    &ptls_openssl_secp384r1,
-    &ptls_openssl_secp521r1,
-    NULL,
+ptls_key_exchange_algorithm_t *key_exchanges[] = { /* XXX */
+	&ptls_openssl_x25519,
+	&ptls_openssl_secp256r1,
+	&ptls_openssl_secp384r1,
+	&ptls_openssl_secp521r1,
+	NULL,
 };
 
 ptls_cipher_suite_t *cipher_suites[] = {
-    &ptls_openssl_aes128gcmsha256,
-    &ptls_openssl_aes256gcmsha384, /* XXX */
-    &ptls_openssl_chacha20poly1305sha256, /* XXX */
-    NULL,
+	&ptls_openssl_aes128gcmsha256,
+	&ptls_openssl_aes256gcmsha384, /* XXX */
+	&ptls_openssl_chacha20poly1305sha256, /* XXX */
+	NULL,
 };
 
 int
@@ -193,10 +280,9 @@ ptls_get_ctx(struct ngtcp2_cid *dcid, struct ngtcp2_cid *scid)
 int
 ptls_read_write_crypto_data(struct nl_msg *msg, struct ngtcp2_cid *dcid, struct ngtcp2_cid *scid,
 	uint8_t encryption_level, const uint8_t *data, size_t datalen,
-	int is_server)
+	uint8_t *tx_data, size_t tx_datalen, int is_server)
 {
 	struct ptls_ctx *cptls = ptls_get_ctx(dcid, scid);
-	warnx("post get ctx");
 	ptls_buffer_t sendbuf;
 	size_t epoch_offsets[5] = {0};
 	size_t epoch = ptls_convert_encryption_level(encryption_level);
@@ -204,19 +290,20 @@ ptls_read_write_crypto_data(struct nl_msg *msg, struct ngtcp2_cid *dcid, struct 
 	size_t i;
 	int rv;
 
-	warnx("pre buf ini");
+	warnx("%s", __func__);
+
+	if (tx_data != NULL)
+		ngtcp2_crypto_picotls_configure_client_session(cptls, tx_data, tx_datalen);
+
 	ptls_buffer_init(&sendbuf, (void *)"", 0);
 
 	assert(epoch == ptls_get_read_epoch(cptls->ptls));
 
-	warnx("ptls_handle_message");
 	rv = ptls_handle_message(cptls->ptls, &sendbuf, epoch_offsets, epoch, data, datalen, &cptls->handshake_properties);
-warnx("post ptls_handle_message");
 
 	if (rv != 0 && rv != PTLS_ERROR_IN_PROGRESS) {
 		if (PTLS_ERROR_GET_CLASS(rv) == PTLS_ERROR_CLASS_SELF_ALERT) {
 			qked_set_tls_alert(msg, (uint8_t)PTLS_ERROR_TO_ALERT(rv));
-warnx("We need to call ngtcp2_set_tls_alert in kenel.");
 		}
 
 		rv = -1;

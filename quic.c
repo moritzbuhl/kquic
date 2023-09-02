@@ -74,7 +74,7 @@ static int quic_rcv_skb(struct sock *sk, struct sk_buff *skb)
 		ulen = NGTCP2_MAX_UDP_PAYLOAD_SIZE;
 	pr_info("%s: ulen=%u\n", __func__, ulen);
 	csum = skb_copy_and_csum_bits(skb, 0, data, ulen);
-	ret = ngtcp2_conn_read_pkt(qp->conn, &(qp->path), NULL, 
+	ret = ngtcp2_conn_read_pkt(qp->conn, &(qp->path), NULL,
 		data, ulen, ktime_get_real_ns());
 	pr_info("%s: ret=%d\n", __func__, ret);
 
@@ -125,6 +125,7 @@ int quic_v4_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 	ngtcp2_transport_params params;
 	struct msghdr msg;
 	struct kvec vec;
+	struct quic_hs_tx_params *tx_params;
 	uint8_t *buf;
 	ssize_t dlen;
 	int ret;
@@ -147,6 +148,13 @@ int quic_v4_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 			ret);
 		return -1;
 	}
+
+	if ((tx_params = kmalloc(sizeof(struct quic_hs_tx_params),
+			GFP_KERNEL)) == NULL) {
+		pr_info("%s: kmalloc failed\n", __func__);
+		return -1;
+	}
+	ngtcp2_conn_set_tls_native_handle(qp->conn, tx_params);
 
 	buf = kmalloc(settings.max_tx_udp_payload_size, GFP_KERNEL);
 	if (buf == NULL) {
