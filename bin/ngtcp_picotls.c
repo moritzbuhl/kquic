@@ -188,6 +188,7 @@ ngtcp2_crypto_picotls_ctx_init(struct ptls_ctx *cptls)
 {
 	cptls->ptls = NULL;
 	memset(&cptls->handshake_properties, 0, sizeof(cptls->handshake_properties));
+	memset(&cptls->ctx, 0, sizeof(cptls->ctx));
 }
 
 static int
