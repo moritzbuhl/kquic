@@ -45,6 +45,10 @@ enum ngtcp2_encryption_level {
 	NGTCP2_ENCRYPTION_LEVEL_0RTT
 };
 
+static const uint8_t H3_ALPN_V1[] = "h3";
+static const uint8_t HQ_ALPN_V1[] = "hq-interop";
+
+
 struct ptls_ctx {
 	ptls_t 				*ptls;
 	ptls_context_t			 ctx;
@@ -117,6 +121,7 @@ ngtcp2_crypto_picotls_configure_client_session(struct ptls_ctx *cptls,
 	uint8_t *tx_data, size_t tx_datalen)
 {
 	ptls_handshake_properties_t *hsprops = &cptls->handshake_properties;
+	ptls_iovec_t *alpn;
 
 	warnx("%s", __func__);
 
@@ -133,6 +138,15 @@ ngtcp2_crypto_picotls_configure_client_session(struct ptls_ctx *cptls,
 
 	hsprops->collect_extension = ngtcp2_crypto_picotls_collect_extension;
 	hsprops->collected_extensions = ngtcp2_crypto_picotls_collected_extensions;
+
+	if ((alpn = malloc(sizeof(ptls_iovec_t))) == NULL)
+		err(1, "malloc");
+
+	alpn->base = H3_ALPN_V1;
+	alpn->len = sizeof(H3_ALPN_V1) - 1; // XXX
+
+	hsprops->client.negotiated_protocols.list = alpn;
+	hsprops->client.negotiated_protocols.count = 1;
 
 	return 0;
 }
@@ -274,6 +288,7 @@ ptls_get_ctx(struct ngtcp2_cid *dcid, struct ngtcp2_cid *scid)
 		ngtcp2_crypto_picotls_ctx_init(res);
 		ngtcp2_crypto_picotls_configure_client_context(&res->ctx);
 		res->ptls = ptls_client_new(&res->ctx);
+		ptls_set_server_name(res->ptls, "localhost", strlen("localhost")); // XXX
 	}
 	return res;
 }

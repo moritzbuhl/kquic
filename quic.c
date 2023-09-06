@@ -63,20 +63,23 @@ static int quic_rcv_skb(struct sock *sk, struct sk_buff *skb)
 {
 	struct quic_sock *qp = quic_sk(sk);
 	uint8_t data[NGTCP2_MAX_UDP_PAYLOAD_SIZE];
-	unsigned int ulen;
-	int ret;
-	__wsum csum;
+	int ulen;
+	int udp_offset, ret;
+	const struct udphdr *uh;
+	char *quic_pkt;
+	quic_pkt = skb_transport_header(skb) + 8;
+	pr_info("%s\n", __func__);
 
-
-	ulen = udp_skb_len(skb);
-	pr_info("%s: ulen=%u\n", __func__, ulen);
+	ulen = udp_skb_len(skb) - 8;
+	pr_info("%s: ulen=%d\n", __func__, ulen);
 	if (ulen > NGTCP2_MAX_UDP_PAYLOAD_SIZE)
 		ulen = NGTCP2_MAX_UDP_PAYLOAD_SIZE;
-	pr_info("%s: ulen=%u\n", __func__, ulen);
-	csum = skb_copy_and_csum_bits(skb, 0, data, ulen);
+	pr_info("%s: ulen=%d\n", __func__, ulen);
+	ret = skb_copy_bits(skb, udp_offset, data, ulen);
+	pr_info("%s: skb_copy_bits ret=%d\n", __func__, ret);
 	ret = ngtcp2_conn_read_pkt(qp->conn, &(qp->path), NULL,
 		data, ulen, ktime_get_real_ns());
-	pr_info("%s: ret=%d\n", __func__, ret);
+	pr_info("%s: ngtcp2_conn_read_pkt ret=%d\n", __func__, ret);
 
 	return __udp_enqueue_schedule_skb(sk, skb);
 }
@@ -86,6 +89,8 @@ int quic_rcv(struct sk_buff *skb)
 	struct sock *sk;
 	const struct iphdr *iph;
 	const struct udphdr *uh;
+
+	pr_info("%s\n", __func__);
 
 	if (!pskb_may_pull(skb, sizeof(struct udphdr)))
 		goto drop;
@@ -115,16 +120,15 @@ drop:
 
 int quic_err(struct sk_buff *skb, u32 info)
 {
+	pr_info("%s\n", __func__);
 	return udp_protocol->err_handler(skb, info);
 }
 
 int quic_v4_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 {
 	struct quic_sock *qp = quic_sk(sk);
-	ngtcp2_settings settings;
-	ngtcp2_transport_params params;
-	struct msghdr msg;
-	struct kvec vec;
+	struct msghdr msg = { 0 };
+	struct kvec vec = { 0 };
 	struct quic_hs_tx_params *tx_params;
 	uint8_t *buf;
 	ssize_t dlen;
@@ -132,22 +136,21 @@ int quic_v4_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 
 	pr_info("%s\n", __func__);
 
-	ngtcp2_settings_default(&settings);
-	ngtcp2_transport_params_default(&params);
-
-	get_random_bytes(qp->dcid.data, NGTCP2_MIN_INITIAL_DCIDLEN);
-	qp->dcid.datalen = NGTCP2_MIN_INITIAL_DCIDLEN;
-	get_random_bytes(qp->scid.data, NGTCP2_MAX_CIDLEN);
-	qp->scid.datalen = NGTCP2_MAX_CIDLEN;
+	get_random_bytes(qp->dcid.data, 18);
+	qp->dcid.datalen = 18;
+	get_random_bytes(qp->scid.data, 17);
+	qp->scid.datalen = 17;
 
 	ret = ngtcp2_conn_client_new(&(qp->conn), &(qp->dcid), &(qp->scid),
-		&(qp->path), NGTCP2_PROTO_VER_MAX, &ngtcp2_cbs, &settings,
-		&params, NULL, NULL);
+		&(qp->path), NGTCP2_PROTO_VER_MAX, &ngtcp2_cbs,
+		&(qp->settings), &(qp->params), NULL, NULL);
 	if (ret != 0) {
 		pr_info("%s: ngtcp2_conn_client_new failed: %d\n", __func__,
 			ret);
 		return -1;
 	}
+
+	/* XXX: error handling, free conn */
 
 	if ((tx_params = kmalloc(sizeof(struct quic_hs_tx_params),
 			GFP_KERNEL)) == NULL) {
@@ -156,14 +159,15 @@ int quic_v4_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 	}
 	ngtcp2_conn_set_tls_native_handle(qp->conn, tx_params);
 
-	buf = kmalloc(settings.max_tx_udp_payload_size, GFP_KERNEL);
+	pr_info("max_tx_udp_payload_size: %ld", qp->settings.max_tx_udp_payload_size); // XXX: max(1200, ...)
+	buf = kmalloc(qp->settings.max_tx_udp_payload_size, GFP_KERNEL);
 	if (buf == NULL) {
 		pr_info("%s: kmalloc failed\n", __func__);
 		return -1;
 	}
 
 	dlen = ngtcp2_conn_write_pkt(qp->conn, &(qp->path), NULL, buf,
-		settings.max_tx_udp_payload_size, 0);
+		qp->settings.max_tx_udp_payload_size, 0);
 	if (dlen < 0) {
 		pr_info("%s: ngtcp2_conn_write_pkt failed: %ld\n", __func__,
 			dlen);
@@ -183,11 +187,12 @@ int quic_v4_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 
 static void quic_destruct_sock(struct sock *sk)
 {
-	struct quic_sock *qp = quic_sk(sk);
+	struct udp_sock *up = udp_sk(sk);
 	struct sk_buff *skb;
+	pr_info("%s\n", __func__);
 
-	skb_queue_splice_tail_init(&sk->sk_receive_queue, &qp->reader_queue);
-	while ((skb = __skb_dequeue(&qp->reader_queue)) != NULL) {
+	skb_queue_splice_tail_init(&sk->sk_receive_queue, &up->reader_queue);
+	while ((skb = __skb_dequeue(&up->reader_queue)) != NULL) {
 		kfree_skb(skb);
 	}
 	inet_sock_destruct(sk);
@@ -196,12 +201,14 @@ static void quic_destruct_sock(struct sock *sk)
 int quic_init_sock(struct sock *sk)
 {
 	struct socket so;
+	struct quic_sock *qp = quic_sk(sk);
 	sockptr_t sptr;
 	int ret;
+	pr_info("%s\n", __func__);
 	so.sk = sk;
 	sptr.is_kernel = 1;
 
-	skb_queue_head_init(&quic_sk(sk)->reader_queue);
+	skb_queue_head_init(&udp_sk(sk)->reader_queue);
 	sk->sk_destruct = quic_destruct_sock;
 	sptr.kernel = &sysctl_rmem_max;
 	if ((ret = sock_setsockopt(&so, SOL_SOCKET, SO_RCVBUF,
@@ -215,6 +222,16 @@ int quic_init_sock(struct sock *sk)
 		pr_crit("%s: setting SNDBUF failed\n", __func__);
 		return ret;
 	}
+
+	ngtcp2_transport_params_default(&qp->params);
+	qp->params.initial_max_stream_data_bidi_local = 6000000;
+	qp->params.initial_max_stream_data_bidi_remote = 6000000;
+	qp->params.initial_max_stream_data_uni = 6000000;
+	qp->params.initial_max_data = 15000000;
+	qp->params.initial_max_streams_uni = 100;
+	qp->params.max_idle_timeout = 30 * NGTCP2_SECONDS;
+	qp->params.active_connection_id_limit = 7;
+	ngtcp2_settings_default(&qp->settings);
 
 	return 0;
 }

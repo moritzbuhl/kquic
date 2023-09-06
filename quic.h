@@ -27,19 +27,13 @@
 #define _QUIC_H
 
 struct quic_sock {
-	struct udp_sock		udp;
-	int			pending;
+	struct udp_sock			 udp;
 
-	__u16			len;
-
-	struct sk_buff_head	reader_queue ____cacheline_aligned_in_smp;
-
-	int			forward_deficit;
-
-	struct ngtcp2_conn	*conn;
-	struct ngtcp2_cid	dcid, scid;
-	struct ngtcp2_path	path;
-	__u32			version;
+	struct ngtcp2_conn		*conn;
+	struct ngtcp2_cid		 dcid, scid;
+	struct ngtcp2_path		 path;
+	struct ngtcp2_settings		 settings;
+	struct ngtcp2_transport_params	 params;
 };
 
 static inline struct quic_sock *quic_sk(const struct sock *sk)

@@ -289,7 +289,7 @@ int ngtcp2_crypto_set_local_transport_params(void *tls, const uint8_t *buf,
 
 	pr_info("%s\n", __func__);
 	hd->len = len;
-	memcpy(&(hd->buf), buf, len);
+	memcpy(hd->buf, buf, len);
 	return 0;
 }
 

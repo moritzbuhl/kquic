@@ -139,13 +139,15 @@ int mygenlmsg_parse(struct nlmsghdr *nlh, int hdrlen, struct nlattr *tb[],
 void
 qked_set_tls_alert(struct nl_msg *msg, uint8_t alert)
 {
-	nla_put_u8(msg, QUIC_HS_ATTR_REPLY_ALERT, alert);
+	if (nla_put_u8(msg, QUIC_HS_ATTR_REPLY_ALERT, alert) != 0)
+		errx(1, "nla_put_u8");
 }
 
 int
 qked_tls_early_data_rejected(struct nl_msg *msg)
 {
-	nla_put_flag(msg, QUIC_HS_ATTR_REPLY_EDR);
+	if (nla_put_flag(msg, QUIC_HS_ATTR_REPLY_EDR) != 0)
+		errx(1, "nla_put_flag");
 	return 0;
 }
 
@@ -166,14 +168,16 @@ qked_submit_crypto_data(struct nl_msg * msg, uint8_t epoch, uint8_t *data,
 	size_t datalen)
 {
 	warnx("%s: epoch=%hd datalen=%ld", __func__, epoch, datalen);
-	nla_put(msg, qked_attr_from_epoch(epoch), datalen, data);
+	if (nla_put(msg, qked_attr_from_epoch(epoch), datalen, data) != 0)
+		errx(1, "nla_put");
 	return 0;
 }
 
 void
 qked_tls_handshake_completed(struct nl_msg *msg)
 {
-	nla_put_flag(msg, QUIC_HS_ATTR_REPLY_HS_FIN);
+	if (nla_put_flag(msg, QUIC_HS_ATTR_REPLY_HS_FIN) != 0)
+		errx(1, "nla_put_flag");
 }
 
 
@@ -198,13 +202,13 @@ qked_hs_cb(struct nl_msg *msg, void *arg)
 
 	dcid.datalen = nla_len(tb[QUIC_HS_ATTR_INIT_DCID]);
 	if (dcid.datalen > NGTCP2_MAX_CIDLEN)
-		err(1, "dcid too long");
+		errx(1, "dcid too long");
 	memcpy(dcid.data, nla_get_string(tb[QUIC_HS_ATTR_INIT_DCID]), /* XXX: nla_memcpy */
 		dcid.datalen);
 
 	scid.datalen = nla_len(tb[QUIC_HS_ATTR_INIT_SCID]);
 	if (scid.datalen > NGTCP2_MAX_CIDLEN)
-		err(1, "scid too long");
+		errx(1, "scid too long");
 	memcpy(scid.data, nla_get_string(tb[QUIC_HS_ATTR_INIT_SCID]), /* XXX: nla_memcpy */
 		scid.datalen);
 
@@ -220,11 +224,15 @@ qked_hs_cb(struct nl_msg *msg, void *arg)
 	if (tb[QUIC_HS_ATTR_INIT_TX_PARAMS] != NULL) {
 		tx_datalen = nla_len(tb[QUIC_HS_ATTR_INIT_TX_PARAMS]);
 		if (tx_datalen > 256)
-			err(1, "tx_data too large");
+			errx(1, "tx_data too large");
 		if ((tx_data = malloc(256)) == NULL)
 			err(1, "malloc");
 		memcpy(tx_data, nla_get_string(tb[QUIC_HS_ATTR_INIT_TX_PARAMS]),
 			tx_datalen); /* XXX: nla_memcpy */
+printf("tx_datalen=%ld, tx_data=", tx_datalen);
+for (int a = 0; a < tx_datalen; a++)
+printf("%02hhX", tx_data[a]);
+printf("\n");
 	}
 
 	is_server = (tb[QUIC_HS_ATTR_INIT_IS_SERVER] != NULL);

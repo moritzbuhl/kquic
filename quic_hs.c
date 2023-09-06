@@ -30,7 +30,7 @@
 
 DEFINE_MUTEX(handshake_lock);
 DECLARE_COMPLETION(handshake_reply);
-static struct nlattr *reply[QUIC_HS_ATTR_MAX + 1];
+ngtcp2_conn *reply_conn = NULL;
 static uint32_t listener_nlportid;
 
 static int quic_hs_hello(struct sk_buff *skb, struct genl_info *info)
@@ -40,55 +40,7 @@ static int quic_hs_hello(struct sk_buff *skb, struct genl_info *info)
 	return 0;
 }
 
-static int quic_hs_handshake(struct sk_buff *skb, struct genl_info *info)
-{
-	struct nlmsghdr *nlh = nlmsg_hdr(skb);
-
-	pr_info("%s\n", __func__);
-
-        if (genlmsg_parse(nlh, &quic_hs_gnl_family, reply, QUIC_HS_ATTR_MAX,
-			quic_hs_genl_policy, NULL) != 0) {
-		pr_warn("%s: parsing response failed.\n", __func__);
-		return -1;
-	}
-
-        if (reply[QUIC_HS_ATTR_REPLY_RC] == NULL) {
-		pr_warn("%s: return code missing.\n", __func__);
-		return -1;
-	}
-
-	/*
-	 * XXX: more verification that the ngtcp2 state machine cannot
-	 * be confused
-	 */
-
-	complete(&handshake_reply);
-
-	return 0;
-}
-
-static const struct genl_small_ops quic_hs_gnl_ops[] = {
-	{
-		.cmd = QUIC_HS_CMD_HELLO,
-		.doit = quic_hs_hello,
-	},
-	{
-		.cmd = QUIC_HS_CMD_HANDSHAKE,
-		.doit = quic_hs_handshake,
-	},
-};
-
-struct genl_family quic_hs_gnl_family = {
-	.name		= "QUIC_HS",
-	.version	= 1,
-	.maxattr	= QUIC_HS_ATTR_MAX,
-	.module		= THIS_MODULE,
-	.policy		= quic_hs_genl_policy,
-	.small_ops	= quic_hs_gnl_ops,
-	.n_small_ops	= ARRAY_SIZE(quic_hs_gnl_ops),
-};
-
-int quick_hs_handle_completion(ngtcp2_conn *conn) {
+int quick_hs_handle_completion(ngtcp2_conn *conn, struct nlattr *reply[]) {
 	int rc;
 
 	pr_info("%s\n", __func__);
@@ -145,17 +97,73 @@ int quick_hs_handle_completion(ngtcp2_conn *conn) {
 		ngtcp2_conn_tls_handshake_completed(conn);
 	}
 
-/* XXXXXX
-	rc = ngtcp2_conn_decode_and_set_remote_transport_params(
-		conn, extensions->data.base, extensions->data.len);
-	if (rv != 0) {
-		ngtcp2_conn_set_tls_error(conn, rc);
-		return -1;
+	if (reply[QUIC_HS_ATTR_REPLY_TX_PARAMS]) {
+		pr_info("%s len=%d\n", __func__, nla_len(reply[QUIC_HS_ATTR_REPLY_TX_PARAMS]));
+		rc = ngtcp2_conn_decode_and_set_remote_transport_params(
+			conn, nla_data(reply[QUIC_HS_ATTR_REPLY_TX_PARAMS]),
+			nla_len(reply[QUIC_HS_ATTR_REPLY_TX_PARAMS]));
+		if (rc != 0) {
+			ngtcp2_conn_set_tls_error(conn, rc);
+			return -1;
+		}
 	}
-*/
 
 	return rc;
 }
+
+static int quic_hs_handshake(struct sk_buff *skb, struct genl_info *info)
+{
+	struct nlmsghdr *nlh = nlmsg_hdr(skb);
+	struct nlattr *reply[QUIC_HS_ATTR_MAX + 1];
+	int rc;
+
+	pr_info("%s\n", __func__);
+
+        if (genlmsg_parse(nlh, &quic_hs_gnl_family, reply, QUIC_HS_ATTR_MAX,
+			quic_hs_genl_policy, NULL) != 0) {
+		pr_warn("%s: parsing response failed.\n", __func__);
+		return -1;
+	}
+
+        if (reply[QUIC_HS_ATTR_REPLY_RC] == NULL) {
+		pr_warn("%s: return code missing.\n", __func__);
+		return -1;
+	}
+
+	/*
+	 * XXX: more verification that the ngtcp2 state machine cannot
+	 * be confused
+	 */
+
+	if ((rc = quick_hs_handle_completion(reply_conn, reply)) != 0)
+		pr_warn("%s: quick_hs_handle_completion rc = %d", __func__, rc);
+
+	reply_conn = NULL;
+	complete(&handshake_reply);
+
+	return 0;
+}
+
+static const struct genl_small_ops quic_hs_gnl_ops[] = {
+	{
+		.cmd = QUIC_HS_CMD_HELLO,
+		.doit = quic_hs_hello,
+	},
+	{
+		.cmd = QUIC_HS_CMD_HANDSHAKE,
+		.doit = quic_hs_handshake,
+	},
+};
+
+struct genl_family quic_hs_gnl_family = {
+	.name		= "QUIC_HS",
+	.version	= 1,
+	.maxattr	= QUIC_HS_ATTR_MAX,
+	.module		= THIS_MODULE,
+	.policy		= quic_hs_genl_policy,
+	.small_ops	= quic_hs_gnl_ops,
+	.n_small_ops	= ARRAY_SIZE(quic_hs_gnl_ops),
+};
 
 int quic_hs_read_write_crypto_data(ngtcp2_conn *conn,
 		ngtcp2_encryption_level encryption_level,
@@ -226,16 +234,19 @@ int quic_hs_read_write_crypto_data(ngtcp2_conn *conn,
 
 	mutex_lock(&handshake_lock);
 	reinit_completion(&handshake_reply);
+
+	reply_conn = conn;
 	if (genlmsg_unicast(&init_net, skb, listener_nlportid) != 0) {
 		pr_warn("%s: genlmsg_unicast failed\n", __func__);
 		mutex_unlock(&handshake_lock);
-		goto fail;
+		return -1;
 	}
 
-	if (wait_for_completion_timeout(&handshake_reply, msecs_to_jiffies(1000)) > 0)
-		rc = quick_hs_handle_completion(conn);
-	else /* XXX: set rc */
-		pr_warn("%s: handshake completion timeout\n", __func__);
+	if (wait_for_completion_timeout(&handshake_reply,
+			msecs_to_jiffies(1000)) == 0)
+		pr_warn("%s: handshake completion timeout", __func__);
+	else
+		rc = 0;
 
 	mutex_unlock(&handshake_lock);
 	return rc;
