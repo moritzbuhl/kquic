@@ -63,25 +63,28 @@ static int quic_rcv_skb(struct sock *sk, struct sk_buff *skb)
 {
 	struct quic_sock *qp = quic_sk(sk);
 	uint8_t data[NGTCP2_MAX_UDP_PAYLOAD_SIZE];
-	int ulen;
-	int udp_offset, ret;
-	const struct udphdr *uh;
+	int ulen, ret;
+	const struct udphdr *uh = udp_hdr(skb);
 	char *quic_pkt;
-	quic_pkt = skb_transport_header(skb) + 8;
+
 	pr_info("%s\n", __func__);
 
-	ulen = udp_skb_len(skb) - 8;
+	ulen = ntohs(uh->len) - 8;
 	pr_info("%s: ulen=%d\n", __func__, ulen);
 	if (ulen > NGTCP2_MAX_UDP_PAYLOAD_SIZE)
-		ulen = NGTCP2_MAX_UDP_PAYLOAD_SIZE;
+		goto drop;
+
+	quic_pkt = skb_transport_header(skb) + 8;
+
 	pr_info("%s: ulen=%d\n", __func__, ulen);
-	ret = skb_copy_bits(skb, udp_offset, data, ulen);
-	pr_info("%s: skb_copy_bits ret=%d\n", __func__, ret);
 	ret = ngtcp2_conn_read_pkt(qp->conn, &(qp->path), NULL,
-		data, ulen, ktime_get_real_ns());
+		quic_pkt, ulen, ktime_get_real_ns());
 	pr_info("%s: ngtcp2_conn_read_pkt ret=%d\n", __func__, ret);
 
 	return __udp_enqueue_schedule_skb(sk, skb);
+drop:
+	kfree_skb(skb);
+	return 0;
 }
 
 int quic_rcv(struct sk_buff *skb)
@@ -346,6 +349,8 @@ struct proto quic_prot = {
 	.unhash			= udp_lib_unhash,
 	.rehash			= quic_v4_rehash,
 	.get_port		= quic_v4_get_port,
+	.memory_allocated	= &udp_memory_allocated,
+	.sysctl_mem		= sysctl_udp_mem,
 	.sysctl_wmem_offset	= offsetof(struct net, ipv4.sysctl_udp_wmem_min),
 	.sysctl_rmem_offset	= offsetof(struct net, ipv4.sysctl_udp_rmem_min),
 	.obj_size		= sizeof(struct quic_sock),
