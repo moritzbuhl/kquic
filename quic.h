@@ -31,7 +31,6 @@ struct quic_sock {
 
 	struct ngtcp2_conn		*conn;
 	struct ngtcp2_cid		 dcid, scid;
-	struct ngtcp2_path		 path;
 	struct ngtcp2_settings		 settings;
 	struct ngtcp2_transport_params	 params;
 };
