@@ -232,6 +232,7 @@ int quic_init_sock(struct sock *sk)
 	qp->params.max_idle_timeout = 30 * NGTCP2_SECONDS;
 	qp->params.active_connection_id_limit = 7;
 	ngtcp2_settings_default(&qp->settings);
+	qp->settings.log_printf = ngtcp_log;
 
 	return 0;
 }

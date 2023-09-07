@@ -28,6 +28,7 @@
 
 #include "ngtcp2/crypto/shared.h"
 
+void ngtcp_log(void *, const char *, ...);
 int get_new_connection_id_cb(ngtcp2_conn *, ngtcp2_cid *, uint8_t *,
 	size_t cidlen, void *);
 void rand_cb(uint8_t *, size_t, const ngtcp2_rand_ctx *);
