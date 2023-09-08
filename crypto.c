@@ -116,9 +116,17 @@ int ngtcp2_crypto_decrypt(uint8_t *dest, const ngtcp2_crypto_aead *aead,
 		const uint8_t *ciphertext, size_t ciphertextlen,
 		const uint8_t *nonce, size_t noncelen,
 		const uint8_t *aad, size_t aadlen) {
-	uint8_t *auth_tag = dest + ciphertextlen;
-	pr_info("%s\n", __func__);
+	uint8_t *auth_tag;
 
+	pr_info("%s", __func__);
+	if (ciphertextlen <= aead->max_overhead)
+		return -1;
+
+	if (noncelen != 12)
+		return -1;
+
+	ciphertextlen -= aead->max_overhead;
+	auth_tag = ciphertext + ciphertextlen;
 	if (!aesgcm_decrypt(aead_ctx->native_handle, dest, ciphertext,
 			ciphertextlen, aad, aadlen, nonce, auth_tag))
 		return -1;
