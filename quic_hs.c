@@ -29,6 +29,10 @@
 #include "quic_hs.h"
 
 DEFINE_MUTEX(handshake_lock);
+/*
+ * XXX: move the completion to user_data on the conn object, pass it t
+ * hs_handshake to get rid of the mutex.
+ */
 DECLARE_COMPLETION(handshake_reply);
 ngtcp2_conn *reply_conn = NULL;
 static uint32_t listener_nlportid;
