@@ -79,38 +79,33 @@ static void quic_set_path(struct ngtcp2_path *path,
 	path->remote.addrlen = sizeof(struct ngtcp2_sockaddr_in);
 }
 
-
 static int quic_rcv_skb(struct sock *sk, struct sk_buff *skb)
 {
+	char quic_pkt[NGTCP2_MAX_UDP_PAYLOAD_SIZE];
+	struct ngtcp2_path path;
+	struct ngtcp2_sockaddr_in local, remote;
 	struct quic_sock *qp = quic_sk(sk);
-	uint8_t data[NGTCP2_MAX_UDP_PAYLOAD_SIZE];
-	int ulen, ret;
 	struct inet_sock *inet = inet_sk(sk);
 	const struct iphdr *iph = ip_hdr(skb);
 	const struct udphdr *uh = udp_hdr(skb);
-	char *quic_pkt;
+	int ulen, ret;
 
-	struct ngtcp2_path path;
-	struct ngtcp2_sockaddr_in local, remote;
-
-	pr_info("%s\n", __func__);
+	pr_info("%s", __func__);
 
 	ulen = ntohs(uh->len) - 8;
-	pr_info("%s: ulen=%d\n", __func__, ulen);
 	if (ulen > NGTCP2_MAX_UDP_PAYLOAD_SIZE)
 		goto drop;
 
-	quic_pkt = skb_transport_header(skb) + 8;
+pr_info("offset=%d, ulen=%d, skb->len=%d", 8, ulen, skb->len);
+	ret = skb_copy_bits(skb, 8, quic_pkt, ulen);
+pr_info("skb_copy_bits: %d", ret);
 
-	pr_info("%s: ulen=%d\n", __func__, ulen);
 	quic_set_path(&path, &local, &remote,
 		inet->inet_sport, inet->inet_saddr,
 		uh->source, iph->saddr);
-	pr_info("pre dec quic pkt: %02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX", quic_pkt[0], quic_pkt[1], quic_pkt[2], quic_pkt[3], quic_pkt[4], quic_pkt[5], quic_pkt[6], quic_pkt[7], quic_pkt[8], quic_pkt[9], quic_pkt[10], quic_pkt[11], quic_pkt[12], quic_pkt[13], quic_pkt[14], quic_pkt[15], quic_pkt[16], quic_pkt[17], quic_pkt[18], quic_pkt[19], quic_pkt[20], quic_pkt[21], quic_pkt[22], quic_pkt[23], quic_pkt[24], quic_pkt[25], quic_pkt[26], quic_pkt[27], quic_pkt[28], quic_pkt[29], quic_pkt[30], quic_pkt[31], quic_pkt[32], quic_pkt[33], quic_pkt[34], quic_pkt[35], quic_pkt[36], quic_pkt[37], quic_pkt[38], quic_pkt[39], quic_pkt[40], quic_pkt[41], quic_pkt[42], quic_pkt[43], quic_pkt[44], quic_pkt[45], quic_pkt[46], quic_pkt[47], quic_pkt[48], quic_pkt[49], quic_pkt[50], quic_pkt[51], quic_pkt[52], quic_pkt[53], quic_pkt[54], quic_pkt[55], quic_pkt[56], quic_pkt[57], quic_pkt[58], quic_pkt[59], quic_pkt[60], quic_pkt[61], quic_pkt[62], quic_pkt[63], quic_pkt[64], quic_pkt[65], quic_pkt[66], quic_pkt[67], quic_pkt[68], quic_pkt[69], quic_pkt[70], quic_pkt[71], quic_pkt[72], quic_pkt[73], quic_pkt[74], quic_pkt[75], quic_pkt[76], quic_pkt[77], quic_pkt[78], quic_pkt[79], quic_pkt[80], quic_pkt[81], quic_pkt[82], quic_pkt[83], quic_pkt[84], quic_pkt[85], quic_pkt[86], quic_pkt[87], quic_pkt[88], quic_pkt[89], quic_pkt[90], quic_pkt[91], quic_pkt[92], quic_pkt[93], quic_pkt[94], quic_pkt[95], quic_pkt[96], quic_pkt[97], quic_pkt[98], quic_pkt[99]);
 	ret = ngtcp2_conn_read_pkt(qp->conn, &path, NULL,
 		quic_pkt, ulen, ktime_get_real_ns());
-	pr_info("pos dec quic pkt: %02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX", quic_pkt[0], quic_pkt[1], quic_pkt[2], quic_pkt[3], quic_pkt[4], quic_pkt[5], quic_pkt[6], quic_pkt[7], quic_pkt[8], quic_pkt[9], quic_pkt[10], quic_pkt[11], quic_pkt[12], quic_pkt[13], quic_pkt[14], quic_pkt[15], quic_pkt[16], quic_pkt[17], quic_pkt[18], quic_pkt[19], quic_pkt[20], quic_pkt[21], quic_pkt[22], quic_pkt[23], quic_pkt[24], quic_pkt[25], quic_pkt[26], quic_pkt[27], quic_pkt[28], quic_pkt[29], quic_pkt[30], quic_pkt[31], quic_pkt[32], quic_pkt[33], quic_pkt[34], quic_pkt[35], quic_pkt[36], quic_pkt[37], quic_pkt[38], quic_pkt[39], quic_pkt[40], quic_pkt[41], quic_pkt[42], quic_pkt[43], quic_pkt[44], quic_pkt[45], quic_pkt[46], quic_pkt[47], quic_pkt[48], quic_pkt[49], quic_pkt[50], quic_pkt[51], quic_pkt[52], quic_pkt[53], quic_pkt[54], quic_pkt[55], quic_pkt[56], quic_pkt[57], quic_pkt[58], quic_pkt[59], quic_pkt[60], quic_pkt[61], quic_pkt[62], quic_pkt[63], quic_pkt[64], quic_pkt[65], quic_pkt[66], quic_pkt[67], quic_pkt[68], quic_pkt[69], quic_pkt[70], quic_pkt[71], quic_pkt[72], quic_pkt[73], quic_pkt[74], quic_pkt[75], quic_pkt[76], quic_pkt[77], quic_pkt[78], quic_pkt[79], quic_pkt[80], quic_pkt[81], quic_pkt[82], quic_pkt[83], quic_pkt[84], quic_pkt[85], quic_pkt[86], quic_pkt[87], quic_pkt[88], quic_pkt[89], quic_pkt[90], quic_pkt[91], quic_pkt[92], quic_pkt[93], quic_pkt[94], quic_pkt[95], quic_pkt[96], quic_pkt[97], quic_pkt[98], quic_pkt[99]);
-	pr_info("%s: ngtcp2_conn_read_pkt ret=%d\n", __func__, ret);
+pr_info("%s: ngtcp2_conn_read_pkt ret=%d\n", __func__, ret);
 
 	return __udp_enqueue_schedule_skb(sk, skb);
 drop:
