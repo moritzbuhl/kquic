@@ -338,7 +338,7 @@ int quic_sendpage(struct sock *sk, struct page *page, int offset, size_t size,
 void quic_release_cb(struct sock *sk)
 {
 	pr_info("%s\n", __func__);
-	return;
+	ip4_datagram_release_cb(sk);
 }
 
 void quic_v4_rehash(struct sock *sk)
