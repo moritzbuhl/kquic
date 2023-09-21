@@ -35,6 +35,25 @@ struct quic_sock {
 	struct ngtcp2_transport_params	 params;
 };
 
+struct quic_queue {
+	struct list_head list;
+};
+
+struct quic_skb_pkt {
+	struct list_head list;
+
+	struct sock *sk;
+	struct sk_buff *skb
+};
+
+struct quic_engine {
+	spinlock_t		 queue_lock;
+	struct quic_queue	 queue;
+
+	struct kthread_worker	*worker;
+	struct kthread_work	 work;
+};
+
 static inline struct quic_sock *quic_sk(const struct sock *sk)
 {
 	return (struct quic_sock *)sk;

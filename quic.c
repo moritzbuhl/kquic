@@ -58,6 +58,7 @@ static const struct net_protocol quic_protocol = {
 };
 
 const struct net_protocol *udp_protocol;
+struct quic_engine *engine;
 
 static void quic_set_path(struct ngtcp2_path *path,
 	struct ngtcp2_sockaddr_in *local, struct ngtcp2_sockaddr_in *remote,
@@ -79,8 +80,29 @@ static void quic_set_path(struct ngtcp2_path *path,
 	path->remote.addrlen = sizeof(struct ngtcp2_sockaddr_in);
 }
 
-static int quic_rcv_skb(struct sock *sk, struct sk_buff *skb)
-{
+static int quic_rcv_skb(struct sock *sk, struct sk_buff *skb) {
+	struct quic_skb_pkt *skb_pkt;
+
+	if ((skb_pkt = kmalloc(sizeof(struct quic_skb_pkt),
+			GFP_KERNEL)) == NULL) {
+		return -1;
+	}
+
+	INIT_LIST_HEAD(&skb_pkt->list);
+	skb_pkt->sk = sk;
+	skb_pkt->skb = skb;
+
+	spin_lock_irqsave(engine->queue_lock); /* XXX: maybe spin_lock_bh? or spin_lock? */
+	list_add_tail(engine->queue, skb_pkt);
+	spin_unlock_irqrestore(engine->queue_lock);
+
+	kthread_queue_work(engine->worker, &engine->work);
+
+	return 0;
+}
+
+static void quic_rcv_skb_async(struct sock *sk, struct sk_buff *skb) {
+
 	char quic_pkt[NGTCP2_MAX_UDP_PAYLOAD_SIZE];
 	struct ngtcp2_path path;
 	struct ngtcp2_sockaddr_in local, remote;
@@ -110,7 +132,22 @@ pr_info("%s: ngtcp2_conn_read_pkt ret=%d\n", __func__, ret);
 	return __udp_enqueue_schedule_skb(sk, skb);
 drop:
 	kfree_skb(skb);
-	return 0;
+}
+
+void quic_queue_rcv(struct kthread_work *kwork) {
+        struct quic_engine *eng =
+                container_of(kwork, struct quic_engine, work);
+	struct quic_skb_pkt *skb_pkt;
+
+	if (list_empty(eng->queue))
+		return;
+	skb_pkt = eng->queue.next;
+
+	spin_lock_irqsave(eng->queue_lock); /* XXX: maybe spin_lock_bh? */
+	list_del(skb_pkt);
+	spin_unlock_irqrestore(eng->queue_lock);
+
+	quic_rcv_skb_async(skb_pkt->sk, skb_pkt->skb);
 }
 
 int quic_rcv(struct sk_buff *skb)
@@ -491,6 +528,15 @@ static int __init quic_init(void)
 	}
 
 	inet_register_protosw(&quic4_protosw);
+
+        engine->worker = kthread_create_worker(0, "quic-queue-worker");
+        if (IS_ERR(engine->worker)) {
+                pr_crit("%s: failed to create worker", __func__);
+                return -1;
+        }
+	INIT_LIST_HEAD(&engine.queue->list);
+	spin_lock_init(engine->queue_lock);
+        kthread_init_work(&engine->work, quic_queue_rcv);
 
 	pr_info("kquic " NGTCP2_VERSION " loaded.\n");
 	return 0;
