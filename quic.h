@@ -35,20 +35,16 @@ struct quic_sock {
 	struct ngtcp2_transport_params	 params;
 };
 
-struct quic_queue {
-	struct list_head list;
-};
-
 struct quic_skb_pkt {
 	struct list_head list;
 
 	struct sock *sk;
-	struct sk_buff *skb
+	struct sk_buff *skb;
 };
 
 struct quic_engine {
 	spinlock_t		 queue_lock;
-	struct quic_queue	 queue;
+	struct list_head	 queue;
 
 	struct kthread_worker	*worker;
 	struct kthread_work	 work;
