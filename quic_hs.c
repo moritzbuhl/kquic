@@ -26,6 +26,7 @@
 #include <net/genetlink.h>
 
 #include "ngtcp2/ngtcp2/ngtcp2.h"
+#include "ngtcp2/crypto/ngtcp2_crypto.h"
 #include "quic_hs.h"
 
 DEFINE_MUTEX(handshake_lock);
@@ -110,6 +111,28 @@ int quick_hs_handle_completion(ngtcp2_conn *conn, struct nlattr *reply[]) {
 			ngtcp2_conn_set_tls_error(conn, rc);
 			return -1;
 		}
+	}
+
+	if (reply[QUIC_HS_ATTR_REPLY_TX_SECRET] &&
+			reply[QUIC_HS_ATTR_REPLY_TX_LEVEL]) {
+		pr_info("%s epoch 2, len=%d\n", __func__, nla_len(reply[QUIC_HS_ATTR_REPLY_CD_2]));
+
+		if (ngtcp2_crypto_derive_and_install_tx_key(conn, NULL, NULL,
+			NULL, nla_get_u8(reply[QUIC_HS_ATTR_REPLY_TX_LEVEL]),
+			nla_data(reply[QUIC_HS_ATTR_REPLY_TX_SECRET]),
+			nla_len(reply[QUIC_HS_ATTR_REPLY_TX_SECRET])) != 0)
+				return -1;
+	}
+
+	if (reply[QUIC_HS_ATTR_REPLY_RX_SECRET] &&
+			reply[QUIC_HS_ATTR_REPLY_RX_LEVEL]) {
+		pr_info("%s epoch 2, len=%d\n", __func__, nla_len(reply[QUIC_HS_ATTR_REPLY_CD_2]));
+
+		if (ngtcp2_crypto_derive_and_install_rx_key(conn, NULL, NULL,
+			NULL, nla_get_u8(reply[QUIC_HS_ATTR_REPLY_RX_LEVEL]),
+			nla_data(reply[QUIC_HS_ATTR_REPLY_RX_SECRET]),
+			nla_len(reply[QUIC_HS_ATTR_REPLY_RX_SECRET])) != 0)
+				return -1;
 	}
 
 	return rc;
