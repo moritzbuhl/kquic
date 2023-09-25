@@ -193,10 +193,8 @@ ngtcp2_crypto_ctx *ngtcp2_crypto_ctx_tls(ngtcp2_crypto_ctx *ctx,
 	uint8_t *hd;
 
 	pr_info("%s\n", __func__);
-	if (tls_native_handle == NULL &&
-			(hd = kmalloc(256, GFP_KERNEL)) == NULL)
-		return NULL;
 
+	ngtcp2_crypto_aead_init(&ctx->aead, NULL);
 	ctx->max_encryption = NGTCP2_CRYPTO_MAX_ENCRYPTION_AES_GCM;
 	ctx->max_decryption_failure =
 		NGTCP2_CRYPTO_MAX_DECRYPTION_FAILURE_AES_GCM;
