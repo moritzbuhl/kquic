@@ -156,11 +156,8 @@ ptls_ctx_cmp(struct ptls_ctx *a, struct ptls_ctx *b)
 {
 	int rc;
 
-	rc = memcmp(a->dcid.data, b->dcid.data,
-		MINIMUM(a->dcid.datalen, b->dcid.datalen));
-	if (rc == 0)
-		rc = memcmp(a->scid.data, b->scid.data,
-			MINIMUM(a->scid.datalen, b->scid.datalen));
+	rc = memcmp(a->scid.data, b->scid.data,
+		MINIMUM(a->scid.datalen, b->scid.datalen));
 	return rc;
 }
 
