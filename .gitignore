@@ -8,6 +8,8 @@ bin/qked
 
 tests/test-tcp
 tests/test-quic
+tests/test-quic-client
+tests/test-quic-server
 
 # Prerequisites
 *.d

@@ -93,6 +93,7 @@ serve(int s)
 	struct pollfd pfd[1];
 	char buf[1024];
 	socklen_t len;
+	int i, r;
 
 	len = sizeof(addr);
 	pfd[0].fd = s;
@@ -104,9 +105,12 @@ serve(int s)
 		if ((s = accept(s, (struct sockaddr *)&addr, &len)) == -1)
 			err(1, "accept");
 		log("%s: recv\n", __func__);
-		if (recv(s, buf, sizeof(buf), 0) == -1)
+		if ((r = recv(s, buf, sizeof(buf), 0)) == -1)
 			err(1, "recv");
-		printf("%s\n", buf);
+		printf("msg of len %d:\n", r);
+		for (i = 0; i < r; i++)
+			printf("%hhx", buf[i]);
+		puts("");
 		
 		strcpy(buf, "ALL IS WELL.");
 		log("%s: send\n", __func__);
@@ -123,7 +127,7 @@ client(void)
 {
 	struct sockaddr_in sin;
 	char buf[1024];
-	int s;
+	int i, r, s;
 
 	sin.sin_family = AF_INET;
 	sin.sin_port = htons(4443);
@@ -143,9 +147,12 @@ client(void)
 	if (send(s, buf, 1024, 0) == -1)
 		err(1, "send");
 	log("%s: recv\n", __func__);
-	if (recv(s, buf, sizeof(buf), 0) == -1)
+	if ((r = recv(s, buf, sizeof(buf), 0)) == -1)
 		err(1, "recv");
-	printf("%s\n", buf);
+	printf("msg of len %d:\n", r);
+	for (i = 0; i < r; i++)
+		printf("%hhx", buf[i]);
+	puts("");
 
 	log("%s: shutdown\n", __func__);
 	if (shutdown(s, SHUT_RDWR) == -1)
@@ -161,6 +168,12 @@ main(int argc, char *argv[])
 	pid_t	ppid;
 	int	s, status = 0;
 
+#if defined(DO_CLIENT)
+	client();
+#elif defined(DO_SERVER)
+	s = server();
+	serve(s);
+#else
 	ppid = getpid();
 
 	switch (fork()) {
@@ -187,6 +200,7 @@ main(int argc, char *argv[])
 			sleep(1);
 		client();
 	}
+#endif
 
 	return 0;
 }
