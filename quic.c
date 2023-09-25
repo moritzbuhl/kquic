@@ -120,9 +120,8 @@ static int quic_rcv_skb_async(struct sock *sk, struct sk_buff *skb) {
 	if (ulen > NGTCP2_MAX_UDP_PAYLOAD_SIZE)
 		goto drop;
 
-	ret = skb_copy_bits(skb, 8, quic_pkt, ulen);
-	pr_info("%s skb_copy_bits(): %d", __func__, ret);
-	// XXX: skb_copy_bits error handling!
+	if (skb_copy_bits(skb, 8, quic_pkt, ulen) != 0)
+		goto drop;
 
 	quic_set_path(&path, &local, &remote,
 		inet->inet_sport, inet->inet_saddr,
