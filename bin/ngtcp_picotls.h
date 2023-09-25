@@ -39,6 +39,10 @@ void qked_set_tls_alert(struct nl_msg *, uint8_t);
 int qked_tls_early_data_rejected(struct nl_msg *);
 int qked_submit_crypto_data(struct nl_msg *, uint8_t, uint8_t *, size_t);
 void qked_tls_handshake_completed(struct nl_msg *);
+int qked_crypto_derive_and_install_tx_key(struct nl_msg *, uint8_t,
+	const void *, size_t);
+int qked_crypto_derive_and_install_rx_key(struct nl_msg *, uint8_t,
+	const void *, size_t);
 
 int ptls_read_write_crypto_data(struct nl_msg *, struct ngtcp2_cid *,
 	struct ngtcp2_cid *, uint8_t, const uint8_t *, size_t, uint8_t *,

@@ -180,6 +180,31 @@ qked_tls_handshake_completed(struct nl_msg *msg)
 		errx(1, "nla_put_flag");
 }
 
+int
+qked_crypto_derive_and_install_tx_key(struct nl_msg *msg, uint8_t lvl,
+    const void *secret, size_t secretlen)
+{
+	warnx("%s: secretlen=%ld", __func__, secretlen);
+	if (nla_put(msg, QUIC_HS_ATTR_REPLY_TX_SECRET, secretlen, secret) != 0)
+		errx(1, "nla_put");
+	if (nla_put_u8(msg, QUIC_HS_ATTR_REPLY_TX_LEVEL, lvl) != 0)
+		errx(1, "nla_put_u8");
+
+	return 0;
+}
+
+int
+qked_crypto_derive_and_install_rx_key(struct nl_msg *msg, uint8_t lvl,
+    const void *secret, size_t secretlen)
+{
+	warnx("%s: secretlen=%ld", __func__, secretlen);
+	if (nla_put(msg, QUIC_HS_ATTR_REPLY_RX_SECRET, secretlen, secret) != 0)
+		errx(1, "nla_put");
+	if (nla_put_u8(msg, QUIC_HS_ATTR_REPLY_RX_LEVEL, lvl) != 0)
+		errx(1, "nla_put_u8");
+
+	return 0;
+}
 
 int
 qked_hs_cb(struct nl_msg *msg, void *arg)

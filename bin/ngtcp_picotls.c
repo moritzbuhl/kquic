@@ -206,18 +206,15 @@ static int
 update_traffic_key_cb(ptls_update_traffic_key_t *self, ptls_t *ptls,
 	int is_enc, size_t epoch, const void *secret)
 {
-	warnx("%s !!!!", __func__);
-/*
-	ngtcp2_crypto_conn_ref *conn_ref = *ptls_get_data_ptr(ptls);
-	ngtcp2_conn *conn = conn_ref->get_conn(conn_ref);
-	ngtcp2_encryption_level level = ngtcp2_crypto_picotls_from_epoch(epoch);
+	struct nl_msg *msg = *ptls_get_data_ptr(ptls);
+	uint8_t level = ngtcp2_crypto_picotls_from_epoch(epoch);
 	ptls_cipher_suite_t *cipher = ptls_get_cipher(ptls);
 	size_t secretlen = cipher->hash->digest_size;
 
-	(void)self;
+	warnx("%s: is_enc=%d, secretlen=%lu", __func__, is_enc, secretlen);
 
 	if (is_enc) {
-		if (ngtcp2_crypto_derive_and_install_tx_key(conn, NULL, NULL, NULL, level,
+		if (qked_crypto_derive_and_install_tx_key(msg, level,
 		    secret, secretlen) != 0) {
 			return -1;
 		}
@@ -225,11 +222,10 @@ update_traffic_key_cb(ptls_update_traffic_key_t *self, ptls_t *ptls,
 		return 0;
 	}
 
-	if (ngtcp2_crypto_derive_and_install_rx_key(conn, NULL, NULL, NULL,
+	if (qked_crypto_derive_and_install_rx_key(msg,
 	    level, secret, secretlen) != 0) {
 		return -1;
 	}
-*/
 	return 0;
 }
 
@@ -304,6 +300,8 @@ ptls_read_write_crypto_data(struct nl_msg *msg, struct ngtcp2_cid *dcid, struct 
 	size_t epoch_datalen;
 	size_t i;
 	int rv;
+
+	*ptls_get_data_ptr(cptls->ptls) = msg;
 
 	warnx("%s", __func__);
 
