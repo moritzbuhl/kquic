@@ -190,8 +190,6 @@ ngtcp2_crypto_ctx *ngtcp2_crypto_ctx_initial(ngtcp2_crypto_ctx *ctx) {
 
 ngtcp2_crypto_ctx *ngtcp2_crypto_ctx_tls(ngtcp2_crypto_ctx *ctx,
 		void *tls_native_handle) {
-	uint8_t *hd;
-
 	pr_info("%s\n", __func__);
 
 	ngtcp2_crypto_aead_init(&ctx->aead, NULL);
