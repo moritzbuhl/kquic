@@ -231,8 +231,6 @@ int ngtcp2_crypto_hp_mask(uint8_t *dest, const ngtcp2_crypto_cipher *hp,
 	DECLARE_CRYPTO_WAIT(wait);
 	int err;
 
-	pr_info("%s\n", __func__);
-
 	if ((req = skcipher_request_alloc(tfm, GFP_KERNEL)) == NULL)
 		return -ENOMEM;
 
@@ -248,7 +246,6 @@ int ngtcp2_crypto_hp_mask(uint8_t *dest, const ngtcp2_crypto_cipher *hp,
 		return -1;
 	}
 	memcpy(dest, out_buf, NGTCP2_HP_SAMPLELEN);
-pr_info("%02hhX%02hhX%02hhX%02hhX%02hhX", dest[0],dest[1],dest[2],dest[3],dest[4]);
 
 	return 0;
 }
