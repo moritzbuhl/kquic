@@ -90,7 +90,7 @@ ngtcp2_crypto_picotls_collected_extensions(ptls_t *ptls,
 	struct st_ptls_handshake_properties_t *properties,
 	ptls_raw_extension_t *extensions)
 {
-	warnx("%s", __func__);
+	warnx("XXX NEED IMPLEMENTATION! %s", __func__);
 
 	for (; extensions->type != UINT16_MAX; ++extensions) {
 		if (extensions->type !=
@@ -289,6 +289,8 @@ ptls_get_ctx(struct ngtcp2_cid *dcid, struct ngtcp2_cid *scid)
 		ngtcp2_crypto_picotls_configure_client_context(&res->ctx);
 		res->ptls = ptls_client_new(&res->ctx);
 		ptls_set_server_name(res->ptls, "localhost", strlen("localhost")); // XXX
+
+		RB_INSERT(ptls_conns, &connections, res);
 	}
 	return res;
 }
