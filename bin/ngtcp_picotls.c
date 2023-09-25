@@ -90,27 +90,21 @@ ngtcp2_crypto_picotls_collected_extensions(ptls_t *ptls,
 	struct st_ptls_handshake_properties_t *properties,
 	ptls_raw_extension_t *extensions)
 {
-	warnx("XXX NEED IMPLEMENTATION! %s", __func__);
+	struct nl_msg *msg = *ptls_get_data_ptr(ptls);
+	int rv;
 
 	for (; extensions->type != UINT16_MAX; ++extensions) {
 		if (extensions->type !=
 		    NGTCP2_TLSEXT_QUIC_TRANSPORT_PARAMETERS_V1)
 			continue;
-warnx("%s: need ngtcp2_conn_decode_and_set_remote_transport_params", __func__);
-/* XXXXXXXXXXXXXXXXX
- * write msg with flags to call the following (at right order!)
- * on kernel side.
 
-		rv = ngtcp2_conn_decode_and_set_remote_transport_params(
-			conn, extensions->data.base, extensions->data.len);
+		rv = qked_conn_decode_and_set_remote_transport_params(
+			msg, extensions->data.base, extensions->data.len);
 		if (rv != 0) {
-			ngtcp2_conn_set_tls_error(conn, rv);
 			return -1;
 		}
 
 		return 0;
-	}
-*/
 	}
 
 	return 0;

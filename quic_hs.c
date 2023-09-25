@@ -46,7 +46,7 @@ static int quic_hs_hello(struct sk_buff *skb, struct genl_info *info)
 }
 
 int quick_hs_handle_completion(ngtcp2_conn *conn, struct nlattr *reply[]) {
-	int rc;
+	int rc, r;
 
 	pr_info("%s\n", __func__);
 	rc = nla_get_s32(reply[QUIC_HS_ATTR_REPLY_RC]);
@@ -115,7 +115,7 @@ int quick_hs_handle_completion(ngtcp2_conn *conn, struct nlattr *reply[]) {
 
 	if (reply[QUIC_HS_ATTR_REPLY_TX_SECRET] &&
 			reply[QUIC_HS_ATTR_REPLY_TX_LEVEL]) {
-		pr_info("%s epoch 2, len=%d\n", __func__, nla_len(reply[QUIC_HS_ATTR_REPLY_CD_2]));
+		pr_info("%s ngtcp2_crypto_derive_and_install_tx_key, len=%d, lvl=%hhu\n", __func__, nla_len(reply[QUIC_HS_ATTR_REPLY_TX_SECRET]), nla_get_u8(reply[QUIC_HS_ATTR_REPLY_TX_LEVEL]));
 
 		if (ngtcp2_crypto_derive_and_install_tx_key(conn, NULL, NULL,
 			NULL, nla_get_u8(reply[QUIC_HS_ATTR_REPLY_TX_LEVEL]),
@@ -126,7 +126,7 @@ int quick_hs_handle_completion(ngtcp2_conn *conn, struct nlattr *reply[]) {
 
 	if (reply[QUIC_HS_ATTR_REPLY_RX_SECRET] &&
 			reply[QUIC_HS_ATTR_REPLY_RX_LEVEL]) {
-		pr_info("%s epoch 2, len=%d\n", __func__, nla_len(reply[QUIC_HS_ATTR_REPLY_CD_2]));
+		pr_info("%s ngtcp2_crypto_derive_and_install_rx_key, len=%d, lvl=%hhu\n", __func__, nla_len(reply[QUIC_HS_ATTR_REPLY_RX_SECRET]), nla_get_u8(reply[QUIC_HS_ATTR_REPLY_RX_LEVEL]));
 
 		if (ngtcp2_crypto_derive_and_install_rx_key(conn, NULL, NULL,
 			NULL, nla_get_u8(reply[QUIC_HS_ATTR_REPLY_RX_LEVEL]),
@@ -134,6 +134,15 @@ int quick_hs_handle_completion(ngtcp2_conn *conn, struct nlattr *reply[]) {
 			nla_len(reply[QUIC_HS_ATTR_REPLY_RX_SECRET])) != 0)
 				return -1;
 	}
+
+	if (reply[QUIC_HS_ATTR_REPLY_RTX_PARAMS]) {
+		pr_info("%s ngtcp2_conn_decode_and_set_remote_transport_params len=%d", __func__, nla_len(reply[QUIC_HS_ATTR_REPLY_RTX_PARAMS]));
+		if ((r = ngtcp2_conn_decode_and_set_remote_transport_params(
+			conn, nla_data(reply[QUIC_HS_ATTR_REPLY_RTX_PARAMS]),
+			nla_len(reply[QUIC_HS_ATTR_REPLY_RTX_PARAMS]))) != 0)
+				ngtcp2_conn_set_tls_error(conn, r);
+	}
+
 
 	return rc;
 }

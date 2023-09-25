@@ -207,6 +207,16 @@ qked_crypto_derive_and_install_rx_key(struct nl_msg *msg, uint8_t lvl,
 }
 
 int
+qked_conn_decode_and_set_remote_transport_params(struct nl_msg * msg,
+	uint8_t *data, size_t datalen)
+{
+	warnx("%s: datalen=%ld", __func__, datalen);
+	if (nla_put(msg, QUIC_HS_ATTR_REPLY_RTX_PARAMS, datalen, data) != 0)
+		errx(1, "nla_put");
+	return 0;
+}
+
+int
 qked_hs_cb(struct nl_msg *msg, void *arg)
 {
 	struct nl_sock *ns = arg;

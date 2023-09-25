@@ -43,6 +43,8 @@ int qked_crypto_derive_and_install_tx_key(struct nl_msg *, uint8_t,
 	const void *, size_t);
 int qked_crypto_derive_and_install_rx_key(struct nl_msg *, uint8_t,
 	const void *, size_t);
+int qked_conn_decode_and_set_remote_transport_params(struct nl_msg *,
+	uint8_t *, size_t);
 
 int ptls_read_write_crypto_data(struct nl_msg *, struct ngtcp2_cid *,
 	struct ngtcp2_cid *, uint8_t, const uint8_t *, size_t, uint8_t *,
