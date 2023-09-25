@@ -120,20 +120,15 @@ static int quic_rcv_skb_async(struct sock *sk, struct sk_buff *skb) {
 	if (ulen > NGTCP2_MAX_UDP_PAYLOAD_SIZE)
 		goto drop;
 
-pr_info("offset=%d, ulen=%d, skb->len=%d", 8, ulen, skb->len);
 	ret = skb_copy_bits(skb, 8, quic_pkt, ulen);
-pr_info("skb_copy_bits: %d", ret);
-printk(KERN_INFO "%s: quic_pkt pre: %hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx\n", __func__, quic_pkt[0],quic_pkt[1],quic_pkt[2],quic_pkt[3],quic_pkt[4],quic_pkt[5],quic_pkt[6],quic_pkt[7],quic_pkt[8],quic_pkt[9], quic_pkt[10],quic_pkt[11],quic_pkt[12],quic_pkt[13],quic_pkt[14],quic_pkt[15],quic_pkt[16],quic_pkt[17],quic_pkt[18],quic_pkt[19], quic_pkt[20],quic_pkt[21],quic_pkt[22],quic_pkt[23],quic_pkt[24],quic_pkt[25],quic_pkt[26],quic_pkt[27],quic_pkt[28],quic_pkt[29]);
-
-	pr_info("neg_ver=%d", qp->conn->negotiated_version);
+	pr_info("%s skb_copy_bits(): %d", __func__, ret);
+	// XXX: skb_copy_bits error handling!
 
 	quic_set_path(&path, &local, &remote,
 		inet->inet_sport, inet->inet_saddr,
 		uh->source, iph->saddr);
 	ret = ngtcp2_conn_read_pkt(qp->conn, &path, NULL,
 		quic_pkt, ulen, ktime_get_real_ns());
-pr_info("%s: ngtcp2_conn_read_pkt ret=%d\n", __func__, ret);
-
 printk(KERN_INFO "%s: quic_pkt post: %hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx\n", __func__, quic_pkt[0],quic_pkt[1],quic_pkt[2],quic_pkt[3],quic_pkt[4],quic_pkt[5],quic_pkt[6],quic_pkt[7],quic_pkt[8],quic_pkt[9], quic_pkt[10],quic_pkt[11],quic_pkt[12],quic_pkt[13],quic_pkt[14],quic_pkt[15],quic_pkt[16],quic_pkt[17],quic_pkt[18],quic_pkt[19], quic_pkt[20],quic_pkt[21],quic_pkt[22],quic_pkt[23],quic_pkt[24],quic_pkt[25],quic_pkt[26],quic_pkt[27],quic_pkt[28],quic_pkt[29]);
 
 	return __udp_enqueue_schedule_skb(sk, skb);
