@@ -281,11 +281,9 @@ void quic_queue_rcv(struct kthread_work *kwork) {
 
 		quic_rcv_skb_async(skb_pkt->sk, skb_pkt->skb);
 		qp = quic_sk(skb_pkt->sk);
-		if (!completion_done(&qp->connected)) {
-			path = (struct ngtcp2_path *)ngtcp2_conn_get_path(qp->conn);
-			if (quic_send_ctrl_pkt(skb_pkt->sk, path) < 0)
-				pr_info("%s: quic_send_ctrl_pkt failed", __func__);
-		}
+		path = (struct ngtcp2_path *)ngtcp2_conn_get_path(qp->conn);
+		if (quic_send_ctrl_pkt(skb_pkt->sk, path) < 0)
+			pr_info("%s: quic_send_ctrl_pkt failed", __func__);
 	}
 }
 
