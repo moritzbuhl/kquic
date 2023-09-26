@@ -124,6 +124,86 @@ out:
 	return rc;
 }
 
+int quic_send_pkt(struct sock *sk, struct msghdr *msg, size_t len)
+{
+	struct quic_sock *qp = quic_sk(sk);
+	struct ngtcp2_path *path = (struct ngtcp2_path *)ngtcp2_conn_get_path(qp->conn);
+	struct sockaddr_in uaddr;
+	struct iovec siov[UIO_FASTIOV], *iov = siov;
+	uint8_t *buf;
+	size_t dlen;
+	ngtcp2_vec *nvec;
+	unsigned long nsegs;
+	int64_t pstream_id;
+	int rc = 0;
+
+	pr_info("%s", __func__);
+
+	nsegs = msg->msg_iter.count;
+
+	if (iov_iter_is_kvec(&msg->msg_iter)) {
+		pr_info("%s is kvec, nsegs=%lu", __func__, nsegs);
+		nvec = (ngtcp2_vec *)msg->msg_iter.kvec;
+	} else if (iter_is_iovec(&msg->msg_iter)) {
+		pr_info("%s is iovec, nsegs=%lu", __func__, nsegs);
+
+		rc = import_iovec(READ, msg->msg_iter.iov, msg->msg_iter.nr_segs,
+			    UIO_FASTIOV, &iov, &msg->msg_iter);
+		if (rc != nsegs) {
+			pr_info("%s iovec, nsegs=%lu vs rc=%d", __func__, nsegs, rc);
+		}
+		nvec = (ngtcp2_vec *)iov;
+	} else {
+		pr_info("%s XXX iter is bad, immplement me!.", __func__);
+		/*
+		struct kvec vec = { 0 };
+		ngtcp2_vec nvec;
+		vec.iov_base = buf;
+		vec.iov_len = dlen;
+		iov_iter_kvec(&msg->msg_iter, READ, &vec, 1, dlen);
+		*/
+		return -1;
+	}
+
+	buf = kmalloc(qp->settings.max_tx_udp_payload_size, GFP_KERNEL);
+	if (buf == NULL) {
+		return -1;
+	}
+
+	if ((rc = ngtcp2_conn_open_bidi_stream(qp->conn, &pstream_id, NULL))
+			!= 0) {
+		pr_info("%s: ngtcp2_conn_open_bidi_stream: %d", __func__, rc);
+		goto out;
+	}
+
+	// XXX: NULL should be replaced in case there is more data coming
+	dlen = ngtcp2_conn_writev_stream(qp->conn, path, NULL, buf,
+		qp->settings.max_tx_udp_payload_size, NULL, 0, pstream_id,
+		nvec, nsegs, ktime_get_real_ns());
+	if (dlen < 0) {
+		pr_info("%s: ngtcp2_conn_writev_stream failed: %ld\n",
+			__func__, dlen);
+		rc = -1;
+		goto out;
+	}
+
+/* XXX: only set uaddr in case we are connected? */
+
+	uaddr.sin_family = AF_INET;
+	uaddr.sin_port = ((ngtcp2_sockaddr_in *)path->remote.addr)->sin_port;
+	uaddr.sin_addr.s_addr = ((ngtcp2_sockaddr_in *)path->remote.addr)->sin_addr.s_addr;
+
+	msg->msg_name = &uaddr;
+	msg->msg_namelen = sizeof(uaddr);
+	if ((rc = udp_prot.sendmsg(sk, msg, dlen)) < 0) {
+		pr_info("%s: udp_prot.sendmsg failed: %d\n", __func__, rc);
+	}
+
+out:
+	kfree(buf);
+	return rc;
+}
+
 static int quic_rcv_skb(struct sock *sk, struct sk_buff *skb) {
 	struct quic_skb_pkt *skb_pkt;
 
@@ -393,6 +473,8 @@ int quic_sendmsg(struct sock *sk, struct msghdr *msg, size_t len)
 
 	if (sk->sk_type == SOCK_DGRAM)
 		goto udpout;
+
+	quic_send_pkt(sk, msg, len);
 
 udpout:
 	return udp_prot.sendmsg(sk, msg, len);
