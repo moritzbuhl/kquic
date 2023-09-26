@@ -33,6 +33,7 @@ struct quic_sock {
 	struct ngtcp2_cid		 dcid, scid;
 	struct ngtcp2_settings		 settings;
 	struct ngtcp2_transport_params	 params;
+	struct completion		 connected;
 };
 
 struct quic_skb_pkt {

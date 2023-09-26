@@ -33,6 +33,8 @@ int get_new_connection_id_cb(ngtcp2_conn *, ngtcp2_cid *, uint8_t *,
 	size_t cidlen, void *);
 void rand_cb(uint8_t *, size_t, const ngtcp2_rand_ctx *);
 
+int quic_handshake_confirmed(ngtcp2_conn *, void *);
+
 ngtcp2_callbacks ngtcp2_cbs = {
 	.client_initial = ngtcp2_crypto_client_initial_cb,
 	.recv_client_initial = NULL,
@@ -61,7 +63,7 @@ ngtcp2_callbacks ngtcp2_cbs = {
 	.extend_max_remote_streams_uni = NULL,
 	.extend_max_stream_data = NULL,
 	.dcid_status = NULL,
-	.handshake_confirmed = NULL,
+	.handshake_confirmed = quic_handshake_confirmed,
 	.recv_new_token = NULL,
 	.delete_crypto_aead_ctx = ngtcp2_crypto_delete_crypto_aead_ctx_cb,
 	.delete_crypto_cipher_ctx = ngtcp2_crypto_delete_crypto_cipher_ctx_cb,

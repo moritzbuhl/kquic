@@ -80,6 +80,65 @@ static void quic_set_path(struct ngtcp2_path *path,
 	path->remote.addrlen = sizeof(struct ngtcp2_sockaddr_in);
 }
 
+int quic_send_ctrl_pkt(struct sock *sk, struct ngtcp2_path *path)
+{
+	struct quic_sock *qp = quic_sk(sk);
+	struct sockaddr_in uaddr;
+	struct msghdr msg = { 0 };
+	struct kvec vec = { 0 };
+	uint8_t *buf;
+	size_t dlen;
+	int rc = 0;
+
+	pr_info("%s", __func__);
+
+	buf = kmalloc(qp->settings.max_tx_udp_payload_size, GFP_KERNEL);
+	if (buf == NULL) {
+		return -1;
+	}
+
+	dlen = ngtcp2_conn_write_pkt(qp->conn, path, NULL, buf,
+		qp->settings.max_tx_udp_payload_size, ktime_get_real_ns());
+	if (dlen < 0) {
+		pr_info("%s: ngtcp2_conn_write_pkt failed: %ld\n",
+			__func__, dlen);
+		rc = -1;
+		goto out;
+	}
+
+	uaddr.sin_family = AF_INET;
+	uaddr.sin_port = ((ngtcp2_sockaddr_in *)path->remote.addr)->sin_port;
+	uaddr.sin_addr.s_addr = ((ngtcp2_sockaddr_in *)path->remote.addr)->sin_addr.s_addr;
+
+	vec.iov_base = buf;
+	vec.iov_len = dlen;
+	msg.msg_name = &uaddr;
+	msg.msg_namelen = sizeof(uaddr);
+	iov_iter_kvec(&msg.msg_iter, READ, &vec, 1, dlen);
+	if ((rc = udp_prot.sendmsg(sk, &msg, dlen)) < 0) {
+		pr_info("%s: udp_prot.sendmsg failed: %d\n", __func__, rc);
+	}
+
+out:
+	kfree(buf);
+	return rc;
+}
+
+/* XXX DEBUGGING, delete : */
+struct ngtcp2_crypto_km;
+typedef struct ngtcp2_crypto_km ngtcp2_crypto_km;
+
+typedef struct ngtcp2_crypto_cc {
+  ngtcp2_crypto_aead aead;
+  ngtcp2_crypto_cipher hp;
+  ngtcp2_crypto_km *ckm;
+  ngtcp2_crypto_cipher_ctx hp_ctx;
+  ngtcp2_encrypt encrypt;
+  ngtcp2_decrypt decrypt;
+  ngtcp2_hp_mask hp_mask;
+} ngtcp2_crypto_cc;
+#include "ngtcp2/ngtcp2_conn.h"
+
 static int quic_rcv_skb(struct sock *sk, struct sk_buff *skb) {
 	struct quic_skb_pkt *skb_pkt;
 
@@ -95,6 +154,7 @@ static int quic_rcv_skb(struct sock *sk, struct sk_buff *skb) {
 	skb_pkt->skb = skb;
 
 	spin_lock_bh(&engine.queue_lock); /* XXX: maybe spin_lock_irq? or spin_lock? */
+pr_info("eqp=%p, skbp=%p", engine.queue.prev, skb_pkt->list.prev);
 	list_add_tail(&skb_pkt->list, &engine.queue);
 	spin_unlock_bh(&engine.queue_lock);
 
@@ -126,9 +186,12 @@ static int quic_rcv_skb_async(struct sock *sk, struct sk_buff *skb) {
 	quic_set_path(&path, &local, &remote,
 		inet->inet_sport, inet->inet_saddr,
 		uh->source, iph->saddr);
+printk(KERN_INFO "%s: pre state=%hhu", __func__, qp->conn->state);
+printk(KERN_INFO "%s: quic_pkt pre: %hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx\n", __func__, quic_pkt[0],quic_pkt[1],quic_pkt[2],quic_pkt[3],quic_pkt[4],quic_pkt[5],quic_pkt[6],quic_pkt[7],quic_pkt[8],quic_pkt[9], quic_pkt[10],quic_pkt[11],quic_pkt[12],quic_pkt[13],quic_pkt[14],quic_pkt[15],quic_pkt[16],quic_pkt[17],quic_pkt[18],quic_pkt[19], quic_pkt[20],quic_pkt[21],quic_pkt[22],quic_pkt[23],quic_pkt[24],quic_pkt[25],quic_pkt[26],quic_pkt[27],quic_pkt[28],quic_pkt[29]);
 	ret = ngtcp2_conn_read_pkt(qp->conn, &path, NULL,
 		quic_pkt, ulen, ktime_get_real_ns());
 printk(KERN_INFO "%s: quic_pkt post: %hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx\n", __func__, quic_pkt[0],quic_pkt[1],quic_pkt[2],quic_pkt[3],quic_pkt[4],quic_pkt[5],quic_pkt[6],quic_pkt[7],quic_pkt[8],quic_pkt[9], quic_pkt[10],quic_pkt[11],quic_pkt[12],quic_pkt[13],quic_pkt[14],quic_pkt[15],quic_pkt[16],quic_pkt[17],quic_pkt[18],quic_pkt[19], quic_pkt[20],quic_pkt[21],quic_pkt[22],quic_pkt[23],quic_pkt[24],quic_pkt[25],quic_pkt[26],quic_pkt[27],quic_pkt[28],quic_pkt[29]);
+printk(KERN_INFO "%s: post state=%hhu", __func__, qp->conn->state);
 
 	return __udp_enqueue_schedule_skb(sk, skb);
 drop:
@@ -137,9 +200,11 @@ drop:
 }
 
 void quic_queue_rcv(struct kthread_work *kwork) {
+	struct quic_sock *qp;
 	struct quic_skb_pkt *skb_pkt;
 	struct quic_engine *eng =
 		container_of(kwork, struct quic_engine, work);
+	struct ngtcp2_path *path;
 
 	pr_info("%s\n", __func__);
 
@@ -152,6 +217,12 @@ void quic_queue_rcv(struct kthread_work *kwork) {
 		spin_unlock_bh(&eng->queue_lock);
 
 		quic_rcv_skb_async(skb_pkt->sk, skb_pkt->skb);
+		qp = quic_sk(skb_pkt->sk);
+		if (!completion_done(&qp->connected)) {
+			path = (struct ngtcp2_path *)ngtcp2_conn_get_path(qp->conn);
+			if (quic_send_ctrl_pkt(skb_pkt->sk, path) < 0)
+				pr_info("%s: quic_send_ctrl_pkt failed", __func__);
+		}
 	}
 }
 
@@ -193,21 +264,26 @@ int quic_err(struct sk_buff *skb, u32 info)
 	return udp_protocol->err_handler(skb, info);
 }
 
+int quic_handshake_confirmed(ngtcp2_conn *conn, void *user_data)
+{
+	struct quic_sock *qp = quic_sk((struct sock *)user_data);
+	pr_info("%s\n", __func__);
+
+	complete(&qp->connected);
+
+	return 0;
+}
+
 int quic_v4_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 {
 	struct quic_sock *qp = quic_sk(sk);
 	struct inet_sock *inet = inet_sk(sk);
-	struct msghdr msg = { 0 };
-	struct kvec vec = { 0 };
 	struct quic_hs_tx_params *tx_params;
-
 	DECLARE_SOCKADDR(struct sockaddr_in *, usin, uaddr);
 	struct ngtcp2_path path;
 	struct ngtcp2_sockaddr_in local, remote;
-
-	uint8_t *buf;
-	ssize_t dlen;
 	int ret;
+
 
 	pr_info("%s\n", __func__);
 
@@ -222,7 +298,7 @@ int quic_v4_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 
 	ret = ngtcp2_conn_client_new(&(qp->conn), &(qp->dcid), &(qp->scid),
 		&path, NGTCP2_PROTO_VER_MAX, &ngtcp2_cbs,
-		&(qp->settings), &(qp->params), NULL, NULL);
+		&(qp->settings), &(qp->params), NULL, qp);
 	if (ret != 0) {
 		pr_info("%s: ngtcp2_conn_client_new failed: %d\n", __func__,
 			ret);
@@ -239,28 +315,20 @@ int quic_v4_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 	ngtcp2_conn_set_tls_native_handle(qp->conn, tx_params);
 
 	pr_info("max_tx_udp_payload_size: %ld", qp->settings.max_tx_udp_payload_size); // XXX: max(1200, ...)
-	buf = kmalloc(qp->settings.max_tx_udp_payload_size, GFP_KERNEL);
-	if (buf == NULL) {
-		pr_info("%s: kmalloc failed\n", __func__);
-		return -1;
+
+	init_completion(&qp->connected);
+
+	if ((ret = quic_send_ctrl_pkt(sk, &path)) < 0)
+		return ret;
+
+pr_info("%s: post quic_send_ctrl_pkt", __func__);
+
+        if (wait_for_completion_timeout(&qp->connected,
+                        msecs_to_jiffies(3000)) == 0) {
+                pr_warn("%s: connect completion timeout", __func__);
+		ret = -1;
 	}
 
-	dlen = ngtcp2_conn_write_pkt(qp->conn, &path, NULL, buf,
-		qp->settings.max_tx_udp_payload_size, 0);
-	if (dlen < 0) {
-		pr_info("%s: ngtcp2_conn_write_pkt failed: %ld\n", __func__,
-			dlen);
-		return -1;
-	} else
-		pr_info("%s: ngtcp2_conn_write_pkt dlen: %ld\n", __func__,
-			dlen);
-
-	vec.iov_base = buf;
-	vec.iov_len = dlen;
-	msg.msg_name = uaddr;
-	msg.msg_namelen = addr_len;
-	iov_iter_kvec(&msg.msg_iter, READ, &vec, 1, dlen);
-	ret = udp_prot.sendmsg(sk, &msg, dlen);
 	return ret;
 }
 
