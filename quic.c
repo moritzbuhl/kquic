@@ -228,6 +228,17 @@ pr_info("eqp=%p, skbp=%p", engine.queue.prev, skb_pkt->list.prev);
 	return 0;
 }
 
+int quic_recv_stream_data(ngtcp2_conn *conn, uint32_t flags,
+		int64_t stream_id, uint64_t offset, const uint8_t *data,
+		size_t datalen, void *user_data, void *stream_user_data) {
+
+	pr_info("%s", __func__);
+
+	pr_info("data: '%s'", user_data);
+
+	return 0;
+}
+
 static int quic_rcv_skb_async(struct sock *sk, struct sk_buff *skb) {
 
 	char quic_pkt[NGTCP2_MAX_UDP_PAYLOAD_SIZE];

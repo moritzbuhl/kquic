@@ -34,6 +34,8 @@ int get_new_connection_id_cb(ngtcp2_conn *, ngtcp2_cid *, uint8_t *,
 void rand_cb(uint8_t *, size_t, const ngtcp2_rand_ctx *);
 
 int quic_handshake_confirmed(ngtcp2_conn *, void *);
+int quic_recv_stream_data(ngtcp2_conn *, uint32_t, int64_t, uint64_t,
+	const uint8_t *, size_t, void *, void *);
 
 ngtcp2_callbacks ngtcp2_cbs = {
 	.client_initial = ngtcp2_crypto_client_initial_cb,
@@ -44,7 +46,7 @@ ngtcp2_callbacks ngtcp2_cbs = {
 	.encrypt = ngtcp2_crypto_encrypt_cb,
 	.decrypt = ngtcp2_crypto_decrypt_cb,
 	.hp_mask = ngtcp2_crypto_hp_mask_cb,
-	.recv_stream_data = NULL,
+	.recv_stream_data = quic_recv_stream_data,
 	.acked_stream_data_offset = NULL,
 	.stream_open = NULL,
 	.stream_close = NULL,
