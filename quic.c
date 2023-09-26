@@ -231,10 +231,13 @@ pr_info("eqp=%p, skbp=%p", engine.queue.prev, skb_pkt->list.prev);
 int quic_recv_stream_data(ngtcp2_conn *conn, uint32_t flags,
 		int64_t stream_id, uint64_t offset, const uint8_t *data,
 		size_t datalen, void *user_data, void *stream_user_data) {
-
+	size_t i;
 	pr_info("%s", __func__);
 
-	pr_info("data: '%s'", user_data);
+	printk(KERN_INFO "data: '");
+	for (i = 0; i < datalen; i++)
+		printk(KERN_CONT "%hhx", data[i]);
+	printk(KERN_CONT "'\n");
 
 	return 0;
 }
