@@ -91,6 +91,9 @@ int quic_send_ctrl_pkt(struct sock *sk, struct ngtcp2_path *path)
 	int rc = 0;
 
 	pr_info("%s", __func__);
+	pr_info("%s: sport=%hu, saddr=%pI4b, dport=%hu, daddr=%pI4b\n", __func__,
+		ntohs(((ngtcp2_sockaddr_in *)path->local.addr)->sin_port), &((ngtcp2_sockaddr_in *)path->local.addr)->sin_addr.s_addr,
+		ntohs(((ngtcp2_sockaddr_in *)path->remote.addr)->sin_port), &((ngtcp2_sockaddr_in *)path->remote.addr)->sin_addr.s_addr);
 
 	buf = kmalloc(qp->settings.max_tx_udp_payload_size, GFP_KERNEL);
 	if (buf == NULL) {
@@ -104,7 +107,11 @@ int quic_send_ctrl_pkt(struct sock *sk, struct ngtcp2_path *path)
 			__func__, dlen);
 		rc = -1;
 		goto out;
+	} else if (dlen == 0) {
+		pr_info("%s: ngtcp2_conn_write_pkt = 0", __func__);
+		goto out;
 	}
+
 
 	uaddr.sin_family = AF_INET;
 	uaddr.sin_port = ((ngtcp2_sockaddr_in *)path->remote.addr)->sin_port;
@@ -253,13 +260,14 @@ static int quic_rcv_skb(struct sock *sk, struct sk_buff *skb) {
 int quic_recv_stream_data(ngtcp2_conn *conn, uint32_t flags,
 		int64_t stream_id, uint64_t offset, const uint8_t *data,
 		size_t datalen, void *user_data, void *stream_user_data) {
-	size_t i;
+size_t i;
+
 	pr_info("%s", __func__);
 
-	printk(KERN_INFO "data: '");
-	for (i = 0; i < datalen; i++)
-		printk(KERN_CONT "%hhx", data[i]);
-	printk(KERN_CONT "'\n");
+printk(KERN_INFO "data: '");
+for (i = 0; i < datalen; i++)
+printk(KERN_CONT "%hhx", data[i]);
+printk(KERN_CONT "'\n");
 
 	return 0;
 }
