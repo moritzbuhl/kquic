@@ -381,6 +381,15 @@ int quic_handshake_confirmed(ngtcp2_conn *conn, void *user_data)
 	return 0;
 }
 
+void quic_v4_rehash(struct sock *sk)
+{
+	u16 new_hash;
+	new_hash = ipv4_portaddr_hash(sock_net(sk),
+		inet_sk(sk)->inet_rcv_saddr,
+		inet_sk(sk)->inet_num);
+	udp_lib_rehash(sk, new_hash);
+}
+
 int quic_v4_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 {
 	struct quic_sock *qp = quic_sk(sk);
@@ -393,6 +402,10 @@ int quic_v4_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 
 
 	pr_info("%s\n", __func__);
+
+	if ((ret = __ip4_datagram_connect(sk, uaddr, addr_len)) != 0)
+		return ret;
+	quic_v4_rehash(sk);
 
 	quic_set_path(&path, &local, &remote,
 		inet->inet_sport, inet->inet_saddr,
@@ -428,9 +441,9 @@ int quic_v4_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 	if ((ret = quic_send_ctrl_pkt(sk, &path)) < 0)
 		return ret;
 
-        if (wait_for_completion_timeout(&qp->connected,
-                        msecs_to_jiffies(3000)) == 0) {
-                pr_warn("%s: connect completion timeout", __func__);
+	if (wait_for_completion_timeout(&qp->connected,
+			msecs_to_jiffies(3000)) == 0) {
+		pr_warn("%s: connect completion timeout", __func__);
 		return -1;
 	}
 
@@ -554,12 +567,6 @@ void quic_release_cb(struct sock *sk)
 {
 	pr_info("%s\n", __func__);
 	ip4_datagram_release_cb(sk);
-}
-
-void quic_v4_rehash(struct sock *sk)
-{
-	pr_info("%s\n", __func__);
-	return;
 }
 
 int quic_v4_get_port(struct sock *sk, unsigned short snum)
