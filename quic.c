@@ -275,7 +275,7 @@ printk(KERN_CONT "'\n");
 
 static int quic_rcv_skb_async(struct sock *sk, struct sk_buff *skb) {
 
-	char quic_pkt[NGTCP2_MAX_UDP_PAYLOAD_SIZE];
+	char quic_pkt[1500];
 	struct ngtcp2_path path;
 	struct ngtcp2_sockaddr_in local, remote;
 	struct quic_sock *qp = quic_sk(sk);
@@ -287,11 +287,15 @@ static int quic_rcv_skb_async(struct sock *sk, struct sk_buff *skb) {
 	pr_info("%s", __func__);
 
 	ulen = ntohs(uh->len) - 8;
-	if (ulen > NGTCP2_MAX_UDP_PAYLOAD_SIZE)
+	if (ulen > sizeof(quic_pkt)) {
+		pr_info("ulen too big drop: ulen=%d", ulen);
 		goto drop;
+	}
 
-	if (skb_copy_bits(skb, 8, quic_pkt, ulen) != 0)
+	if ((ret = skb_copy_bits(skb, 8, quic_pkt, ulen)) != 0) {
+		pr_info("cpy bits drop: ulen=%d, ret=%d", ulen, ret);
 		goto drop;
+	}
 
 	quic_set_path(&path, &local, &remote,
 		inet->inet_sport, inet->inet_saddr,
