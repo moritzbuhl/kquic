@@ -238,7 +238,6 @@ static int quic_rcv_skb(struct sock *sk, struct sk_buff *skb) {
 	skb_pkt->skb = skb;
 
 	spin_lock_bh(&engine.queue_lock); /* XXX: maybe spin_lock_irq? or spin_lock? */
-pr_info("eqp=%p, skbp=%p", engine.queue.prev, skb_pkt->list.prev);
 	list_add_tail(&skb_pkt->list, &engine.queue);
 	spin_unlock_bh(&engine.queue_lock);
 
@@ -284,10 +283,8 @@ static int quic_rcv_skb_async(struct sock *sk, struct sk_buff *skb) {
 	quic_set_path(&path, &local, &remote,
 		inet->inet_sport, inet->inet_saddr,
 		uh->source, iph->saddr);
-printk(KERN_INFO "%s: quic_pkt pre: %hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx\n", __func__, quic_pkt[0],quic_pkt[1],quic_pkt[2],quic_pkt[3],quic_pkt[4],quic_pkt[5],quic_pkt[6],quic_pkt[7],quic_pkt[8],quic_pkt[9], quic_pkt[10],quic_pkt[11],quic_pkt[12],quic_pkt[13],quic_pkt[14],quic_pkt[15],quic_pkt[16],quic_pkt[17],quic_pkt[18],quic_pkt[19], quic_pkt[20],quic_pkt[21],quic_pkt[22],quic_pkt[23],quic_pkt[24],quic_pkt[25],quic_pkt[26],quic_pkt[27],quic_pkt[28],quic_pkt[29]);
 	ret = ngtcp2_conn_read_pkt(qp->conn, &path, NULL,
 		quic_pkt, ulen, ktime_get_real_ns());
-printk(KERN_INFO "%s: quic_pkt post: %hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx%hhx\n", __func__, quic_pkt[0],quic_pkt[1],quic_pkt[2],quic_pkt[3],quic_pkt[4],quic_pkt[5],quic_pkt[6],quic_pkt[7],quic_pkt[8],quic_pkt[9], quic_pkt[10],quic_pkt[11],quic_pkt[12],quic_pkt[13],quic_pkt[14],quic_pkt[15],quic_pkt[16],quic_pkt[17],quic_pkt[18],quic_pkt[19], quic_pkt[20],quic_pkt[21],quic_pkt[22],quic_pkt[23],quic_pkt[24],quic_pkt[25],quic_pkt[26],quic_pkt[27],quic_pkt[28],quic_pkt[29]);
 
 	return __udp_enqueue_schedule_skb(sk, skb);
 drop:
@@ -415,12 +412,10 @@ int quic_v4_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 	if ((ret = quic_send_ctrl_pkt(sk, &path)) < 0)
 		return ret;
 
-pr_info("%s: post quic_send_ctrl_pkt", __func__);
-
         if (wait_for_completion_timeout(&qp->connected,
                         msecs_to_jiffies(3000)) == 0) {
                 pr_warn("%s: connect completion timeout", __func__);
-		ret = -1;
+		return -1;
 	}
 
 	return ret;
