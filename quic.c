@@ -286,6 +286,11 @@ static int quic_rcv_skb_async(struct sock *sk, struct sk_buff *skb) {
 	ret = ngtcp2_conn_read_pkt(qp->conn, &path, NULL,
 		quic_pkt, ulen, ktime_get_real_ns());
 
+	if (ret != 0) {
+		pr_info("%s: ngtcp2_conn_read_pkt ret=%d", __func__, ret);
+		goto drop;
+	}
+
 	return __udp_enqueue_schedule_skb(sk, skb);
 drop:
 	kfree_skb(skb);
