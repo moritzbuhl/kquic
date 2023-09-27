@@ -180,6 +180,10 @@ printk(KERN_CONT "'\n");
 		goto out;
 	}
 
+	/*
+	 * XXX: only open a new stream once, not every send.
+	 * store it in sk and reuse if already set.
+	 */
 	if ((rc = ngtcp2_conn_open_bidi_stream(qp->conn, &pstream_id, NULL))
 			!= 0) {
 		pr_info("%s: ngtcp2_conn_open_bidi_stream: %d", __func__, rc);
