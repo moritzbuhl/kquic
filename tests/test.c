@@ -91,7 +91,7 @@ serve(int s)
 {
 	struct sockaddr_storage addr;
 	struct pollfd pfd[1];
-	char buf[1024];
+	char buf[1500];
 	socklen_t len;
 	int i, r;
 
@@ -114,7 +114,7 @@ serve(int s)
 		
 		strcpy(buf, "ALL IS WELL.");
 		log("%s: send\n", __func__);
-		if (send(s, buf, 1024, 0) == -1)
+		if (send(s, buf, strlen(buf), 0) == -1)
 			err(1, "send");
 		return;
 	}
@@ -126,14 +126,15 @@ void
 client(void)
 {
 	struct sockaddr_in sin;
-	char buf[1024];
+	const char *HTTP_REQ = "GET / HTTP/1.1\r\nHost: localhost:4443\r\nConnection: close\r\n\r\n";
+	char buf[1500];
 	int i, r, s;
 
 	sin.sin_family = AF_INET;
 	sin.sin_port = htons(4443);
 	sin.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-	strcpy(buf, "HELLO WORLD!");
+	strcpy(buf, HTTP_REQ);
 
 	log("%s: socket\n", __func__);
 	if ((s = socket(AF_INET, SOCK_STREAM, MYPROTO)) == -1)
@@ -144,7 +145,7 @@ client(void)
 		err(1, "connect");
 
 	log("%s: send\n", __func__);
-	if (send(s, buf, 1024, 0) == -1)
+	if (send(s, buf, strlen(buf), 0) == -1)
 		err(1, "send");
 	log("%s: recv\n", __func__);
 	if ((r = recv(s, buf, sizeof(buf), 0)) == -1)
