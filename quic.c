@@ -374,11 +374,10 @@ int quic_err(struct sk_buff *skb, u32 info)
 
 int quic_handshake_confirmed(ngtcp2_conn *conn, void *user_data)
 {
-	struct quic_sock *qp = quic_sk((struct sock *)user_data);
+	struct quic_sock *qp = quic_sk(user_data);
 	pr_info("%s\n", __func__);
 
 	complete(&qp->connected);
-
 	return 0;
 }
 
