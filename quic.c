@@ -356,7 +356,19 @@ drop:
 
 int quic_err(struct sk_buff *skb, u32 info)
 {
-	pr_info("%s\n", __func__);
+	const struct iphdr *iph = (const struct iphdr *)skb->data;
+	struct udphdr *uh = (struct udphdr *)(skb->data+(iph->ihl<<2));
+	struct sock *sk;
+	struct net *net = dev_net(skb->dev);
+
+	pr_info("%s: %p %x\n", __func__, skb, info);
+
+	sk = __udp4_lib_lookup(net, iph->daddr, uh->dest,
+			       iph->saddr, uh->source, skb->dev->ifindex,
+			       inet_sdif(skb), &quic_table, NULL);
+
+	pr_info("%s: sk=%p", __func__, sk);
+	pr_info("%s: dport=%hu, daddr=%pI4b, sport=%hu, saddr=%pI4b\n", __func__, ntohs(uh->dest), &iph->daddr, ntohs(uh->source), &iph->saddr);
 	return udp_protocol->err_handler(skb, info);
 }
 
