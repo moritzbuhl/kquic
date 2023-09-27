@@ -261,6 +261,7 @@ static int quic_rcv_skb(struct sock *sk, struct sk_buff *skb) {
 int quic_recv_stream_data(ngtcp2_conn *conn, uint32_t flags,
 		int64_t stream_id, uint64_t offset, const uint8_t *data,
 		size_t datalen, void *user_data, void *stream_user_data) {
+	struct sk_buff *skb;
 size_t i;
 
 	pr_info("%s", __func__);
@@ -270,7 +271,13 @@ for (i = 0; i < datalen; i++)
 printk(KERN_CONT "%hhx", data[i]);
 printk(KERN_CONT "'\n");
 
-	return 0;
+	if ((skb = alloc_skb(datalen, GFP_ATOMIC)) == NULL)
+		return -1;
+
+	skb_reserve(skb, datalen);
+	skb_put_data(skb, data, datalen);
+
+	return __udp_enqueue_schedule_skb(user_data, skb);
 }
 
 static int quic_rcv_skb_async(struct sock *sk, struct sk_buff *skb) {
@@ -308,7 +315,8 @@ static int quic_rcv_skb_async(struct sock *sk, struct sk_buff *skb) {
 		goto drop;
 	}
 
-	return __udp_enqueue_schedule_skb(sk, skb);
+	kfree_skb(skb);
+	return 0;
 drop:
 	kfree_skb(skb);
 	return -1;
