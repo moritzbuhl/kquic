@@ -198,8 +198,9 @@ printk(KERN_CONT "'\n");
 	}
 
 	// XXX: NULL should be replaced in case there is more data coming
-	dlen = ngtcp2_conn_writev_stream(qp->conn, path, NULL, buf, len,
-		NULL, 0, pstream_id, nvec, nsegs, ktime_get_real_ns());
+	dlen = ngtcp2_conn_writev_stream(qp->conn, path, NULL, buf,
+		qp->settings.max_tx_udp_payload_size, NULL, 0, pstream_id,
+		nvec, nsegs, ktime_get_real_ns());
 	if (dlen < 0) {
 		pr_info("%s: ngtcp2_conn_writev_stream failed: %ld\n",
 			__func__, dlen);
