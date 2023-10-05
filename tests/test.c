@@ -126,15 +126,16 @@ void
 client(void)
 {
 	struct sockaddr_in sin;
-	const char *HTTP_REQ = "GET / HTTP/1.1\r\nHost: localhost:4443\r\nConnection: close\r\n\r\n";
+	const unsigned char *HTTP_REQ = "\x01\x1d\x00\x00\xd1\xd7\xc1\x50\x8a\x08\x9d\x5c\x0b\x81\x70\xdc\x69\xa6\x99\x5f\x50\x89\xa1\x1d\xad\x31\x18\x69\x70\x2e\x0f";
 	char buf[1500];
+	size_t reqlen = 31;
 	int i, r, s;
 
 	sin.sin_family = AF_INET;
 	sin.sin_port = htons(4443);
 	sin.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-	strcpy(buf, HTTP_REQ);
+	memcpy(buf, HTTP_REQ, reqlen);
 
 	log("%s: socket\n", __func__);
 	if ((s = socket(AF_INET, SOCK_STREAM, MYPROTO)) == -1)
@@ -145,7 +146,7 @@ client(void)
 		err(1, "connect");
 
 	log("%s: send\n", __func__);
-	if (send(s, buf, strlen(buf), 0) == -1)
+	if (send(s, buf, reqlen, 0) == -1)
 		err(1, "send");
 	log("%s: recv\n", __func__);
 	if ((r = recv(s, buf, sizeof(buf), 0)) == -1)
