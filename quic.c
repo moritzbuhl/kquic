@@ -263,21 +263,31 @@ int quic_recv_stream_data(ngtcp2_conn *conn, uint32_t flags,
 		size_t datalen, void *user_data, void *stream_user_data) {
 	struct sk_buff *skb;
 size_t i;
+int r=0;
 
-	pr_info("%s", __func__);
+	pr_info("%s, datalen=%lu", __func__, datalen);
 
 printk(KERN_INFO "data: '");
 for (i = 0; i < datalen; i++)
-printk(KERN_CONT "%hhx", data[i]);
+printk(KERN_CONT "%02hhx", data[i]);
 printk(KERN_CONT "'\n");
 
-	if ((skb = alloc_skb(datalen, GFP_ATOMIC)) == NULL)
+	if ((skb = alloc_skb(datalen + SKB_HEADER_LEN + 20, GFP_ATOMIC)) == NULL)
 		return -1;
+	skb->sk = user_data;
 
-	skb_reserve(skb, datalen);
+	skb_reserve(skb, SKB_HEADER_LEN);
+	skb_set_inner_network_header(skb, 0);
 	skb_put_data(skb, data, datalen);
 
-	return __udp_enqueue_schedule_skb(user_data, skb);
+	skb->csum_valid = true;
+	skb->ip_summed = CHECKSUM_UNNECESSARY;
+	udp_skb_scratch(skb)->csum_unnecessary = true;
+
+	pr_info("r=%d skb->users=%ld", r, refcount_read(&skb->users));
+	r = __udp_enqueue_schedule_skb(user_data, skb);
+	pr_info("r=%d skb->users=%ld", r, refcount_read(&skb->users));
+	return r;
 }
 
 static int quic_rcv_skb_async(struct sock *sk, struct sk_buff *skb) {
@@ -566,7 +576,7 @@ int quic_recvmsg(struct sock *sk, struct msghdr *msg, size_t len,
 #endif
 		int flags, int *addr_len)
 {
-	pr_info("%s\n", __func__);
+	pr_info("%s, sockerr=%d\n", __func__, sock_error(sk));
 
 	if (sk->sk_type == SOCK_DGRAM)
 		goto udpin;
