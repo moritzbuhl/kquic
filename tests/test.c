@@ -126,10 +126,12 @@ void
 client(void)
 {
 	struct sockaddr_in sin;
-	const unsigned char *HTTP_REQ = "\x01\x1d\x00\x00\xd1\xd7\xc1\x50\x8a\x08\x9d\x5c\x0b\x81\x70\xdc\x69\xa6\x99\x5f\x50\x89\xa1\x1d\xad\x31\x18\x69\x70\x2e\x0f";
+	//const unsigned char *HTTP_REQ_slash = "\x01\x1d\x00\x00\xd1\xd7\xc1\x50\x8a\x08\x9d\x5c\x0b\x81\x70\xdc\x69\xa6\x99\x5f\x50\x89\xa1\x1d\xad\x31\x18\x69\x70\x2e\x0f";
+	const unsigned char *HTTP_REQ = "\x01\x25\x00\x00\xd1\xd7\x51\x87\x60\x20\x00\x00\x00\x00\x00\x50\x8a\x08\x9d\x5c\x0b\x81\x70\xdc\x69\xa6\x99\x5f\x50\x89\xa1\x1d\xad\x31\x18\x69\x70\x2e\x0f"; // GET /1000000000
 	char buf[1500];
-	size_t reqlen = 31;
-	int i, r, s;
+	size_t reqlen = 39;
+	//size_t reqlen_slash = 31;
+	int i, j, r, s;
 
 	sin.sin_family = AF_INET;
 	sin.sin_port = htons(4443);
@@ -148,13 +150,15 @@ client(void)
 	log("%s: send\n", __func__);
 	if (send(s, buf, reqlen, 0) == -1)
 		err(1, "send");
-	log("%s: recv\n", __func__);
-	if ((r = recv(s, buf, sizeof(buf), 0)) == -1)
-		err(1, "recv");
-	printf("msg of len %d:\n", r);
-	for (i = 0; i < r; i++)
-		printf("%hhx", buf[i]);
-	puts("");
+
+	for (j = 0; j < 4862; j++) {
+		log("%s: recv\n", __func__);
+		if ((r = recv(s, buf, sizeof(buf), 0)) == -1)
+			err(1, "recv");
+		for (i = 0; i < r; i++)
+			printf("%c", buf[i]);
+		puts("");
+	}
 
 	log("%s: shutdown\n", __func__);
 	if (shutdown(s, SHUT_RDWR) == -1)
