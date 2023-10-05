@@ -235,8 +235,6 @@ ptls_key_exchange_algorithm_t *key_exchanges[] = { /* XXX */
 
 ptls_cipher_suite_t *cipher_suites[] = {
 	&ptls_openssl_aes128gcmsha256,
-	&ptls_openssl_aes256gcmsha384, /* XXX */
-	&ptls_openssl_chacha20poly1305sha256, /* XXX */
 	NULL,
 };
 
