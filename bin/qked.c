@@ -236,16 +236,10 @@ qked_hs_cb(struct nl_msg *msg, void *arg)
 	}
 
 	dcid.datalen = nla_len(tb[QUIC_HS_ATTR_INIT_DCID]);
-	if (dcid.datalen > NGTCP2_MAX_CIDLEN)
-		errx(1, "dcid too long");
-	memcpy(dcid.data, nla_get_string(tb[QUIC_HS_ATTR_INIT_DCID]), /* XXX: nla_memcpy */
-		dcid.datalen);
+	nla_memcpy(dcid.data, tb[QUIC_HS_ATTR_INIT_DCID], dcid.datalen);
 
 	scid.datalen = nla_len(tb[QUIC_HS_ATTR_INIT_SCID]);
-	if (scid.datalen > NGTCP2_MAX_CIDLEN)
-		errx(1, "scid too long");
-	memcpy(scid.data, nla_get_string(tb[QUIC_HS_ATTR_INIT_SCID]), /* XXX: nla_memcpy */
-		scid.datalen);
+	nla_memcpy(scid.data, tb[QUIC_HS_ATTR_INIT_SCID], scid.datalen);
 
 	lvl = nla_get_u8(tb[QUIC_HS_ATTR_INIT_ENC_LVL]);
 	if (tb[QUIC_HS_ATTR_INIT_DATA] != NULL) {
