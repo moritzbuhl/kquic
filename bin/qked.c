@@ -246,8 +246,7 @@ qked_hs_cb(struct nl_msg *msg, void *arg)
 		datalen = nla_len(tb[QUIC_HS_ATTR_INIT_DATA]);
 		if ((data = malloc(datalen)) == NULL)
 			err(1, "malloc");
-		memcpy(data, nla_get_string(tb[QUIC_HS_ATTR_INIT_DATA]),
-			datalen); /* XXX: nla_memcpy */
+		nla_memcpy(data, tb[QUIC_HS_ATTR_INIT_DATA], datalen);
 	}
 
 	if (tb[QUIC_HS_ATTR_INIT_TX_PARAMS] != NULL) {
@@ -256,8 +255,8 @@ qked_hs_cb(struct nl_msg *msg, void *arg)
 			errx(1, "tx_data too large");
 		if ((tx_data = malloc(256)) == NULL)
 			err(1, "malloc");
-		memcpy(tx_data, nla_get_string(tb[QUIC_HS_ATTR_INIT_TX_PARAMS]),
-			tx_datalen); /* XXX: nla_memcpy */
+		nla_memcpy(tx_data, tb[QUIC_HS_ATTR_INIT_TX_PARAMS],
+			tx_datalen);
 printf("tx_datalen=%ld, tx_data=", tx_datalen);
 for (int a = 0; a < tx_datalen; a++)
 printf("%02hhX", tx_data[a]);
