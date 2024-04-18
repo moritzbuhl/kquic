@@ -283,7 +283,7 @@ printf("\n");
 	if (nl_send_auto(ns, res) < 0)
 		errx(1, "nl_send_auto");
 
-	/* XXX free() */
+	free(res);
 
 	return NL_SKIP; /* XXX */
 }
