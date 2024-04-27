@@ -23,8 +23,8 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef _NGTCP_PICOTLS_H
-#define _NGTCP_PICOTLS_H
+#ifndef _PTLS_H
+#define _PTLS_H
 
 #define NGTCP2_MAX_CIDLEN	20
 
@@ -50,4 +50,4 @@ int ptls_read_write_crypto_data(struct nl_msg *, struct ngtcp2_cid *,
 	struct ngtcp2_cid *, uint8_t, const uint8_t *, size_t, uint8_t *,
 	size_t, int);
 
-#endif /* _NGTCP_PICOTLS_H */
+#endif /* _PTLS_H */

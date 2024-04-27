@@ -32,7 +32,7 @@
 #include <picotls.h>
 #include <picotls/openssl.h>
 
-#include "ngtcp_picotls.h"
+#include "ptls.h"
 
 #define MINIMUM(a,b)	(((a)<(b))?(a):(b))
 
