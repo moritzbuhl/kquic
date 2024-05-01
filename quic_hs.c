@@ -206,7 +206,6 @@ int quic_hs_read_write_crypto_data(ngtcp2_conn *conn,
 		const uint8_t *data, size_t datalen) {
 	struct sk_buff *skb;
 	void *hdr;
-	const ngtcp2_cid *dcid;
 	struct quic_hs_tx_params *tx;
 	ngtcp2_cid scid;
 	int rc = -EMSGSIZE;
@@ -218,7 +217,6 @@ int quic_hs_read_write_crypto_data(ngtcp2_conn *conn,
 		return -1;
 	}
 
-	dcid = ngtcp2_conn_get_dcid(conn);
 	ngtcp2_conn_get_scid(conn, &scid);
 
 	if ((skb = genlmsg_new(NLMSG_GOODSIZE, GFP_KERNEL)) == NULL)
@@ -227,13 +225,6 @@ int quic_hs_read_write_crypto_data(ngtcp2_conn *conn,
 	if ((hdr = genlmsg_put(skb, 0, 0, &quic_hs_gnl_family, 0,
 			QUIC_HS_CMD_HANDSHAKE)) == NULL)
 		goto fail;
-
-	/* XXX: dcid is just a random nonce */
-	if (nla_put(skb, QUIC_HS_ATTR_INIT_DCID, dcid->datalen,
-			dcid->data) != 0) {
-		pr_err("%s: nla_put", __func__);
-		goto fail;
-	}
 
 	if (nla_put(skb, QUIC_HS_ATTR_INIT_SCID, scid.datalen,
 			scid.data) != 0) {

@@ -28,7 +28,6 @@
 
 enum {
 	QUIC_HS_ATTR_UNSPEC,
-	QUIC_HS_ATTR_INIT_DCID,
 	QUIC_HS_ATTR_INIT_SCID,
 	QUIC_HS_ATTR_INIT_ENC_LVL,
 	QUIC_HS_ATTR_INIT_DATA,
@@ -56,6 +55,7 @@ enum {
 	QUIC_HS_CMD_UNSPEC,
 	QUIC_HS_CMD_HELLO,
 	QUIC_HS_CMD_HANDSHAKE,
+	QUIC_HS_CMD_HANDSHAKE_REPLY,
 	__QUIC_HS_CMD_MAX,
 };
 #define QUIC_HS_CMD_MAX (__QUIC_HS_CMD_MAX - 1)
@@ -63,10 +63,6 @@ enum {
 #ifdef __LINUX_GENERIC_NETLINK_H
 /* XXX: add more maxlen and minlen entries to the binary types. */
 static struct nla_policy quic_hs_genl_policy[QUIC_HS_ATTR_MAX + 1] = {
-	[QUIC_HS_ATTR_INIT_DCID]	= { .type = NLA_BINARY,
-					    .maxlen = NGTCP2_MAX_CIDLEN,
-					    .minlen = NGTCP2_MIN_INITIAL_DCIDLEN
-					  },
 	[QUIC_HS_ATTR_INIT_SCID]	= { .type = NLA_BINARY,
 					    .maxlen = NGTCP2_MAX_CIDLEN,
 					    .minlen = NGTCP2_MIN_CIDLEN

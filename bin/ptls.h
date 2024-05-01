@@ -47,7 +47,6 @@ int qked_conn_decode_and_set_remote_transport_params(struct nl_msg *,
 	uint8_t *, size_t);
 
 int ptls_read_write_crypto_data(struct nl_msg *, struct ngtcp2_cid *,
-	struct ngtcp2_cid *, uint8_t, const uint8_t *, size_t, uint8_t *,
-	size_t, int);
+	uint8_t, const uint8_t *, size_t, uint8_t *, size_t, int);
 
 #endif /* _PTLS_H */

@@ -122,7 +122,7 @@ qked_hs_cb(struct nl_msg *msg, void *arg)
 	struct nl_sock *ns = arg;
 	struct nlattr *tb[QUIC_HS_ATTR_MAX + 1];
 	struct nl_msg *res;
-	struct ngtcp2_cid dcid, scid;
+	struct ngtcp2_cid scid;
 	size_t tx_datalen = 0, datalen = 0;
 	uint8_t lvl, *data = NULL, *tx_data = NULL;
 	int id, rc, is_server;
@@ -134,9 +134,6 @@ qked_hs_cb(struct nl_msg *msg, void *arg)
 		warnx("%s: nla_parse failed %d", __func__, rc);
 		return NL_STOP;
 	}
-
-	dcid.datalen = nla_len(tb[QUIC_HS_ATTR_INIT_DCID]);
-	nla_memcpy(dcid.data, tb[QUIC_HS_ATTR_INIT_DCID], dcid.datalen);
 
 	scid.datalen = nla_len(tb[QUIC_HS_ATTR_INIT_SCID]);
 	nla_memcpy(scid.data, tb[QUIC_HS_ATTR_INIT_SCID], scid.datalen);
@@ -175,7 +172,7 @@ printf("\n");
 	    QUIC_HS_CMD_HANDSHAKE, 0) == NULL) /* XXX: split msgs, CMD_HS_REPLY */
 		errx(1, "genlmsg_put");
 
-	rc = ptls_read_write_crypto_data(res, &dcid, &scid, lvl, data, datalen,
+	rc = ptls_read_write_crypto_data(res, &scid, lvl, data, datalen,
 		tx_data, tx_datalen, is_server);
 
 	nla_put_s32(res, QUIC_HS_ATTR_REPLY_RC, rc);

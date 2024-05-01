@@ -54,7 +54,7 @@ struct ptls_ctx {
 	ptls_context_t			 ctx;
 	ptls_handshake_properties_t	 handshake_properties;
 	RB_ENTRY(ptls_ctx)		 ctx_node;
-	struct ngtcp2_cid		 dcid, scid;
+	struct ngtcp2_cid		 scid;
 };
 
 static int
@@ -254,20 +254,16 @@ ngtcp2_crypto_picotls_configure_client_context(ptls_context_t *ctx)
 }
 
 static struct ptls_ctx *
-ptls_get_ctx(struct ngtcp2_cid *dcid, struct ngtcp2_cid *scid)
+ptls_get_ctx(struct ngtcp2_cid *scid)
 {
 
 	struct ptls_ctx find, *res;
-	memcpy(&find.dcid.data, dcid->data, dcid->datalen);
-	find.dcid.datalen = dcid->datalen;
 	memcpy(&find.scid.data, scid->data, scid->datalen);
 	find.scid.datalen = scid->datalen;
 
 	if ((res = RB_FIND(ptls_conns, &connections, &find)) == NULL) {
 		if ((res = malloc(sizeof(struct ptls_ctx))) == NULL)
 			err(1, "malloc");
-		memcpy(res->dcid.data, dcid->data, dcid->datalen);
-		res->dcid.datalen = dcid->datalen;
 		memcpy(res->scid.data, scid->data, scid->datalen);
 		res->scid.datalen = scid->datalen;
 		ngtcp2_crypto_picotls_ctx_init(res);
@@ -281,11 +277,11 @@ ptls_get_ctx(struct ngtcp2_cid *dcid, struct ngtcp2_cid *scid)
 }
 
 int
-ptls_read_write_crypto_data(struct nl_msg *msg, struct ngtcp2_cid *dcid, struct ngtcp2_cid *scid,
+ptls_read_write_crypto_data(struct nl_msg *msg, struct ngtcp2_cid *scid,
 	uint8_t encryption_level, const uint8_t *data, size_t datalen,
 	uint8_t *tx_data, size_t tx_datalen, int is_server)
 {
-	struct ptls_ctx *cptls = ptls_get_ctx(dcid, scid);
+	struct ptls_ctx *cptls = ptls_get_ctx(scid);
 	ptls_buffer_t sendbuf;
 	size_t epoch_offsets[5] = {0};
 	size_t epoch = ptls_convert_encryption_level(encryption_level);
