@@ -60,6 +60,10 @@ enum {
 };
 #define QUIC_HS_CMD_MAX (__QUIC_HS_CMD_MAX - 1)
 
+#ifndef NLA_POLICY_RANGE
+#define NLA_POLICY_RANGE(t, min, max)	{ .type=t, .minlen=min, .maxlen=max }
+#endif
+
 #ifdef __LINUX_GENERIC_NETLINK_H
 /* XXX: add more maxlen and minlen entries to the binary types. */
 static struct nla_policy quic_hs_genl_policy[QUIC_HS_ATTR_MAX + 1] = {

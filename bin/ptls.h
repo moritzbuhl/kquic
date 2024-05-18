@@ -26,6 +26,7 @@
 #ifndef _PTLS_H
 #define _PTLS_H
 
+#define NGTCP2_MIN_CIDLEN	1
 #define NGTCP2_MAX_CIDLEN	20
 
 struct ngtcp2_cid {

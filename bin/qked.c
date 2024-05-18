@@ -33,8 +33,8 @@
 
 #include <event.h>
 
-#include "../quic_hs.h"
 #include "ptls.h"
+#include "../quic_hs.h"
 
 void
 qked_set_tls_alert(struct nl_msg *msg, uint8_t alert)
