@@ -26,6 +26,11 @@
 #ifndef _QUIC_H
 #define _QUIC_H
 
+
+#define SKB_HEADER_LEN						\
+	(max(sizeof(struct iphdr), sizeof(struct ipv6hdr)) +	\
+	 sizeof(struct udphdr) + NET_SKB_PAD)
+
 struct quic_sock {
 	struct udp_sock			 udp;
 
