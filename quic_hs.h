@@ -63,10 +63,9 @@ enum {
 #ifdef __LINUX_GENERIC_NETLINK_H
 /* XXX: add more maxlen and minlen entries to the binary types. */
 static struct nla_policy quic_hs_genl_policy[QUIC_HS_ATTR_MAX + 1] = {
-	[QUIC_HS_ATTR_INIT_SCID]	= { .type = NLA_BINARY,
-					    .maxlen = NGTCP2_MAX_CIDLEN,
-					    .minlen = NGTCP2_MIN_CIDLEN
-					  },
+	[QUIC_HS_ATTR_INIT_SCID]	= NLA_POLICY_RANGE(NLA_BINARY, 
+						NGTCP2_MIN_CIDLEN,
+						NGTCP2_MAX_CIDLEN),
 	[QUIC_HS_ATTR_INIT_ENC_LVL]	= { .type = NLA_U8 },
 	[QUIC_HS_ATTR_INIT_DATA]	= { .type = NLA_BINARY },
 	[QUIC_HS_ATTR_INIT_TX_PARAMS]	= { .type = NLA_BINARY },
