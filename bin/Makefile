@@ -1,6 +1,6 @@
 # qked
 
-SRC = qked.c ngtcp_picotls.c
+SRC = qked.c ptls.c
 OBJ = $(SRC:.c=.o)
 
 CFLAGS += -Wall -I/usr/include/libnl3/ -I./picotls/include/ -I.
